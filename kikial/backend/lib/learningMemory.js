@@ -1,4 +1,5 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -6,24 +7,10 @@ import { fileURLToPath } from "node:url";
 // PATH
 // ======================================================
 
-const dataDirectory = join(
-  fileURLToPath(new URL("../data/", import.meta.url)),
-);
-
-const knowledgePath = join(
-  dataDirectory,
-  "knowledge.json",
-);
-
-const learnedPath = join(
-  dataDirectory,
-  "learned.json",
-);
-
-const userMemoryPath = join(
-  dataDirectory,
-  "userMemory.json",
-);
+const dataDirectory = join(fileURLToPath(new URL("../data/", import.meta.url)));
+const knowledgePath = join(dataDirectory, "knowledge.json");
+const learnedPath = join(dataDirectory, "learned.json");
+const userMemoryPath = join(dataDirectory, "userMemory.json");
 
 // ======================================================
 // CONFIG
@@ -32,12 +19,45 @@ const userMemoryPath = join(
 const MAX_LEARNED = 500;
 const MAX_USER_MEMORY = 50;
 
+// Ngưỡng điểm (sau chuẩn hoá 0..1) để coi là "khớp"
+export const MATCH_THRESHOLD = 0.45;
+
 let knowledge = [];
 let learned = [];
 let userMemory = {};
 
 // ======================================================
-// NORMALIZE TEXT
+// GHI FILE TUẦN TỰ (chống race condition)
+// Mọi lệnh ghi xếp vào một hàng đợi, ghi file tạm rồi rename.
+// ======================================================
+
+let writeQueue = Promise.resolve();
+
+function queueWrite(path, data) {
+  writeQueue = writeQueue
+    .then(async () => {
+      await mkdir(dataDirectory, { recursive: true });
+      const temporaryPath = `${path}.${process.pid}.tmp`;
+      await writeFile(temporaryPath, JSON.stringify(data, null, 2), "utf8");
+      await rename(temporaryPath, path);
+    })
+    .catch((error) => {
+      console.error(`[Kikial Memory] Ghi ${path} thất bại:`, error.message);
+    });
+
+  return writeQueue;
+}
+
+async function readJson(path, fallback) {
+  try {
+    return JSON.parse(await readFile(path, "utf8"));
+  } catch {
+    return fallback;
+  }
+}
+
+// ======================================================
+// NORMALIZE / TOKENIZE
 // ======================================================
 
 function normalizeText(text) {
@@ -50,502 +70,268 @@ function normalizeText(text) {
     .trim();
 }
 
-// ======================================================
-// TOKENIZE
-// ======================================================
-
 const STOP_WORDS = new Set([
-  "la",
-  "gi",
-  "cua",
-  "cho",
-  "toi",
-  "minh",
-  "ban",
-  "mot",
-  "nhung",
-  "cac",
-  "va",
-  "voi",
-  "nay",
-  "kia",
-  "do",
-  "thi",
-  "ma",
-  "co",
-  "duoc",
-  "lam",
-  "nhu",
-  "nao",
-  "hay",
-  "ve",
-  "trong",
-  "khi",
-  "neu",
-  "tai",
-  "sao",
+  "la", "gi", "cua", "cho", "toi", "minh", "ban", "mot", "nhung", "cac",
+  "va", "voi", "nay", "kia", "do", "thi", "ma", "co", "duoc", "lam",
+  "nhu", "nao", "hay", "ve", "trong", "khi", "neu", "tai", "sao", "the",
+  "khong", "ra", "den", "tu", "hon", "rat", "cung", "se", "da", "dang",
 ]);
 
 function words(text) {
-  const normalized = normalizeText(text);
-
   return new Set(
-    normalized
+    normalizeText(text)
       .split(" ")
-      .filter(
-        (word) =>
-          word.length >= 2 &&
-          !STOP_WORDS.has(word),
-      ),
+      .filter((word) => word.length >= 2 && !STOP_WORDS.has(word)),
   );
 }
 
 // ======================================================
-// READ JSON
+// CHUẨN HOÁ BẢN GHI
+// Nâng cấp dữ liệu cũ (không có id/hits) lên định dạng mới.
 // ======================================================
 
-async function readJson(path, fallback) {
-  try {
-    const raw = await readFile(path, "utf8");
+function normalizeItem(item, { store, defaultVerified }) {
+  const createdAt = item?.createdAt || item?.learnedAt || new Date().toISOString();
 
-    return JSON.parse(raw);
-  } catch {
-    return fallback;
-  }
+  return {
+    id: item?.id || randomUUID(),
+    question: String(item?.question || "").trim(),
+    answer: String(item?.answer || "").trim(),
+    store,
+    verified: typeof item?.verified === "boolean" ? item.verified : defaultVerified,
+    hits: Number.isFinite(item?.hits) ? item.hits : 0,
+    createdAt,
+    updatedAt: item?.updatedAt || createdAt,
+    // Giữ lại để tương thích dữ liệu cũ
+    learnedAt: createdAt,
+  };
 }
 
 // ======================================================
-// WRITE JSON
-// ======================================================
-
-async function writeJson(path, data) {
-  await mkdir(dataDirectory, {
-    recursive: true,
-  });
-
-  await writeFile(
-    path,
-    JSON.stringify(data, null, 2),
-    "utf8",
-  );
-}
-
-// ======================================================
-// LOAD KNOWLEDGE
+// LOAD / SAVE
 // ======================================================
 
 export async function loadKnowledge() {
-  const stored = await readJson(
-    knowledgePath,
-    [],
-  );
+  const stored = await readJson(knowledgePath, []);
 
-  knowledge = Array.isArray(stored)
-    ? stored
-    : [];
+  knowledge = (Array.isArray(stored) ? stored : [])
+    .map((item) => normalizeItem(item, { store: "knowledge", defaultVerified: true }))
+    .filter((item) => item.question && item.answer);
 
   return knowledge;
 }
 
-// ======================================================
-// SAVE KNOWLEDGE
-// ======================================================
-
-export async function saveKnowledge(
-  nextKnowledge = knowledge,
-) {
-  knowledge = Array.isArray(nextKnowledge)
-    ? nextKnowledge
-    : [];
-
-  await writeJson(
-    knowledgePath,
-    knowledge,
+export async function saveKnowledge(nextKnowledge = knowledge) {
+  knowledge = (Array.isArray(nextKnowledge) ? nextKnowledge : []).map((item) =>
+    normalizeItem(item, { store: "knowledge", defaultVerified: true }),
   );
+
+  await queueWrite(knowledgePath, knowledge);
 
   return knowledge;
 }
-
-// ======================================================
-// LOAD LEARNED
-// ======================================================
 
 export async function loadLearned() {
-  const stored = await readJson(
-    learnedPath,
-    [],
-  );
+  const stored = await readJson(learnedPath, []);
 
-  learned = Array.isArray(stored)
-    ? stored.slice(-MAX_LEARNED)
-    : [];
-
-  return learned;
-}
-
-// ======================================================
-// SAVE LEARNED
-// ======================================================
-
-export async function saveLearned(
-  nextLearned = learned,
-) {
-  const items = Array.isArray(nextLearned)
-    ? nextLearned
-    : [];
-
-  learned = items.slice(-MAX_LEARNED);
-
-  await writeJson(
-    learnedPath,
-    learned,
+  learned = prune(
+    (Array.isArray(stored) ? stored : [])
+      .map((item) => normalizeItem(item, { store: "learned", defaultVerified: false }))
+      .filter((item) => item.question && item.answer),
   );
 
   return learned;
 }
 
-// ======================================================
-// LOAD USER MEMORY
-// ======================================================
+export async function saveLearned(nextLearned = learned) {
+  learned = prune(
+    (Array.isArray(nextLearned) ? nextLearned : []).map((item) =>
+      normalizeItem(item, { store: "learned", defaultVerified: false }),
+    ),
+  );
+
+  await queueWrite(learnedPath, learned);
+
+  return learned;
+}
+
+// Cắt bớt theo chất lượng, không phải theo thời gian:
+// đã duyệt > nhiều lượt dùng > mới hơn.
+function prune(items) {
+  if (items.length <= MAX_LEARNED) return items;
+
+  return [...items]
+    .sort((a, b) => {
+      if (a.verified !== b.verified) return a.verified ? -1 : 1;
+      if (a.hits !== b.hits) return b.hits - a.hits;
+      return String(b.updatedAt).localeCompare(String(a.updatedAt));
+    })
+    .slice(0, MAX_LEARNED);
+}
 
 export async function loadUserMemory() {
-  const stored = await readJson(
-    userMemoryPath,
-    {},
-  );
+  const stored = await readJson(userMemoryPath, {});
 
   userMemory =
-    stored &&
-    typeof stored === "object" &&
-    !Array.isArray(stored)
-      ? stored
-      : {};
+    stored && typeof stored === "object" && !Array.isArray(stored) ? stored : {};
 
   return userMemory;
 }
 
-// ======================================================
-// SAVE USER MEMORY
-// ======================================================
-
-export async function saveUserMemory(
-  nextMemory = userMemory,
-) {
+export async function saveUserMemory(nextMemory = userMemory) {
   userMemory =
-    nextMemory &&
-    typeof nextMemory === "object" &&
-    !Array.isArray(nextMemory)
+    nextMemory && typeof nextMemory === "object" && !Array.isArray(nextMemory)
       ? nextMemory
       : {};
 
-  await writeJson(
-    userMemoryPath,
-    userMemory,
-  );
+  await queueWrite(userMemoryPath, userMemory);
 
   return userMemory;
 }
 
-// ======================================================
-// INITIALIZE
-// Gọi khi server khởi động
-// ======================================================
-
 export async function initializeMemory() {
-  await Promise.all([
-    loadKnowledge(),
-    loadLearned(),
-    loadUserMemory(),
-  ]);
+  await Promise.all([loadKnowledge(), loadLearned(), loadUserMemory()]);
 
-  console.log(
-    `[Kikial Memory] Knowledge: ${knowledge.length}`,
-  );
+  const pending = learned.filter((item) => !item.verified).length;
 
+  console.log(`[Kikial Memory] Knowledge: ${knowledge.length}`);
   console.log(
-    `[Kikial Memory] Learned: ${learned.length}/${MAX_LEARNED}`,
+    `[Kikial Memory] Learned: ${learned.length}/${MAX_LEARNED} (chờ duyệt: ${pending})`,
   );
-
-  console.log(
-    `[Kikial Memory] Users: ${Object.keys(userMemory).length}`,
-  );
+  console.log(`[Kikial Memory] Users: ${Object.keys(userMemory).length}`);
 }
 
 // ======================================================
 // USER MEMORY
 // ======================================================
 
+const emailKeyOf = (email) => String(email || "").trim().toLowerCase();
+
 export function findUserMemory(email) {
-  const emailKey = String(email || "")
-    .trim()
-    .toLowerCase();
+  const key = emailKeyOf(email);
+  if (!key) return [];
 
-  if (!emailKey) {
-    return [];
-  }
-
-  const memory = userMemory[emailKey];
-
-  return Array.isArray(memory)
-    ? memory
-    : [];
+  return Array.isArray(userMemory[key]) ? userMemory[key] : [];
 }
 
-// ======================================================
-// REMEMBER USER
-// ======================================================
+export async function rememberUser(email, fact) {
+  const key = emailKeyOf(email);
+  const normalizedFact = String(fact || "").trim();
 
-export async function rememberUser(
-  email,
-  fact,
-) {
-  const emailKey = String(email || "")
-    .trim()
-    .toLowerCase();
+  if (!key || !normalizedFact) return false;
 
-  const normalizedFact = String(
-    fact || "",
-  ).trim();
+  const current = findUserMemory(key);
+  const target = normalizeText(normalizedFact);
 
-  if (!emailKey || !normalizedFact) {
-    return false;
-  }
+  if (current.some((item) => normalizeText(item) === target)) return false;
 
-  const current =
-    findUserMemory(emailKey);
-
-  // Chống trùng memory
-  const exists = current.some(
-    (item) =>
-      normalizeText(item) ===
-      normalizeText(normalizedFact),
-  );
-
-  if (exists) {
-    return false;
-  }
-
-  userMemory[emailKey] = [
-    ...current,
-    normalizedFact,
-  ].slice(-MAX_USER_MEMORY);
-
+  userMemory[key] = [...current, normalizedFact].slice(-MAX_USER_MEMORY);
   await saveUserMemory();
 
   return true;
 }
 
-// ======================================================
-// FORGET USER FACT
-// ======================================================
-
-export async function forgetUser(
-  email,
-  fact,
-) {
-  const emailKey = String(email || "")
-    .trim()
-    .toLowerCase();
-
-  if (!emailKey) {
-    return false;
-  }
+export async function forgetUser(email, fact) {
+  const key = emailKeyOf(email);
+  if (!key) return false;
 
   const target = normalizeText(fact);
+  const current = findUserMemory(key);
+  const filtered = current.filter((item) => normalizeText(item) !== target);
 
-  const current =
-    findUserMemory(emailKey);
+  if (filtered.length === current.length) return false;
 
-  const filtered = current.filter(
-    (item) =>
-      normalizeText(item) !== target,
-  );
+  userMemory[key] = filtered;
+  await saveUserMemory();
 
-  if (
-    filtered.length === current.length
-  ) {
-    return false;
-  }
+  return true;
+}
 
-  userMemory[emailKey] = filtered;
+export async function clearUserMemory(email) {
+  const key = emailKeyOf(email);
+  if (!key || !userMemory[key]) return false;
 
+  delete userMemory[key];
   await saveUserMemory();
 
   return true;
 }
 
 // ======================================================
-// CLEAR USER MEMORY
+// CHẤM ĐIỂM (chuẩn hoá về 0..1)
 // ======================================================
 
-export async function clearUserMemory(
-  email,
-) {
-  const emailKey = String(email || "")
-    .trim()
-    .toLowerCase();
+function relevanceScore(question, item) {
+  const questionText = normalizeText(question);
+  const storedQuestion = normalizeText(item?.question);
 
-  if (!emailKey) {
-    return false;
-  }
+  if (!questionText || !storedQuestion) return 0;
 
-  if (!userMemory[emailKey]) {
-    return false;
-  }
+  // Trùng khít
+  if (questionText === storedQuestion) return 1;
 
-  delete userMemory[emailKey];
-
-  await saveUserMemory();
-
-  return true;
-}
-
-// ======================================================
-// CALCULATE RELEVANCE SCORE
-// ======================================================
-
-function relevanceScore(
-  question,
-  item,
-) {
-  const questionText =
-    normalizeText(question);
-
-  const storedQuestion =
-    normalizeText(item?.question);
-
-  const storedAnswer =
-    normalizeText(item?.answer);
-
+  // Chứa nhau — chỉ tính khi câu đủ dài, tránh "ai" khớp mọi thứ
+  const shorter = Math.min(questionText.length, storedQuestion.length);
   if (
-    !questionText ||
-    !storedQuestion
+    shorter >= 8 &&
+    (storedQuestion.includes(questionText) || questionText.includes(storedQuestion))
   ) {
-    return 0;
+    return 0.75;
   }
 
-  // Câu giống hệt
-  if (
-    questionText === storedQuestion
-  ) {
-    return 100;
-  }
+  const questionWords = words(questionText);
+  if (questionWords.size === 0) return 0;
 
-  // Một câu chứa câu kia
-  if (
-    storedQuestion.includes(
-      questionText,
-    ) ||
-    questionText.includes(
-      storedQuestion,
-    )
-  ) {
-    return 50;
-  }
+  const titleWords = words(storedQuestion);
+  const answerWords = words(item?.answer);
 
-  const questionWords =
-    words(questionText);
-
-  const titleWords =
-    words(storedQuestion);
-
-  const answerWords =
-    words(storedAnswer);
-
-  let score = 0;
-
+  let raw = 0;
   for (const word of questionWords) {
-    // Từ xuất hiện trong question
-    // quan trọng hơn answer.
-    if (titleWords.has(word)) {
-      score += 3;
-    }
-
-    if (answerWords.has(word)) {
-      score += 1;
-    }
+    if (titleWords.has(word)) raw += 3;
+    else if (answerWords.has(word)) raw += 1;
   }
 
-  return score;
+  // Chia cho điểm tối đa có thể -> không thiên vị câu trả lời dài
+  return Math.min(raw / (questionWords.size * 3), 1);
 }
 
-// ======================================================
-// FIND RELEVANT KNOWLEDGE
-// Tìm cả knowledge.json + learned.json
-// ======================================================
+export function findRelevantKnowledge(question, limit = 5) {
+  // Chỉ dùng kiến thức đã duyệt làm ngữ cảnh cho AI.
+  const pool = [...knowledge, ...learned.filter((item) => item.verified)];
 
-export function findRelevantKnowledge(
-  question,
-  limit = 5,
-) {
-  const allKnowledge = [
-    ...knowledge.map((item) => ({
-      ...item,
-      source: "knowledge",
-    })),
-
-    ...learned.map((item) => ({
-      ...item,
-      source: "learned",
-    })),
-  ];
-
-  return allKnowledge
-    .map((item) => ({
-      ...item,
-
-      score: relevanceScore(
-        question,
-        item,
-      ),
-    }))
-    .filter(
-      (item) => item.score > 0,
-    )
-    .sort(
-      (a, b) => b.score - a.score,
-    )
+  return pool
+    .map((item) => ({ ...item, score: relevanceScore(question, item) }))
+    .filter((item) => item.score >= MATCH_THRESHOLD)
+    .sort((a, b) => b.score - a.score || b.hits - a.hits)
     .slice(0, limit);
 }
 
+// Đánh dấu bản ghi đã được dùng (để xếp hạng khi cắt bớt)
+export async function markHit(id) {
+  const item = learned.find((entry) => entry.id === id);
+  if (!item) return false;
+
+  item.hits += 1;
+  await saveLearned();
+
+  return true;
+}
+
 // ======================================================
-// KIỂM TRA CÂU TRẢ LỜI CÓ ĐƯỢC HỌC KHÔNG
+// ĐIỀU KIỆN ĐƯỢC HỌC
 // ======================================================
 
 function canLearn(question, answer) {
   const q = String(question || "").trim();
   const a = String(answer || "").trim();
 
-  if (!q || !a) {
-    return false;
-  }
+  if (!q || !a) return false;
+  if (q.length < 3 || a.length < 10) return false;
+  if (a.length > 4000) return false;
 
-  // Quá ngắn
-  if (q.length < 3 || a.length < 10) {
-    return false;
-  }
-
-  const normalizedAnswer =
-    normalizeText(a);
-
-  // Không học câu demo
-  const blocked = [
-    "day la ban demo",
-    "ban demo hoi dap",
-    "minh da nhan duoc cau hoi",
-    "hay hoi cu the hon",
-    "khong the tra loi",
-    "khong the ket noi",
-    "loi ket noi",
-    "dang suy nghi",
-    "ai chua tra ve noi dung",
-  ];
-
-  if (
-    blocked.some((text) =>
-      normalizedAnswer.includes(text),
-    )
-  ) {
+  // Đã có trong kho seed thì không học lại
+  const normalizedQuestion = normalizeText(q);
+  if (knowledge.some((item) => normalizeText(item.question) === normalizedQuestion)) {
     return false;
   }
 
@@ -554,132 +340,114 @@ function canLearn(question, answer) {
 
 // ======================================================
 // LEARN
+// Mặc định verified = false: câu mới phải được duyệt
+// (bằng 👍 của người dùng hoặc admin) mới được dùng lại.
 // ======================================================
 
-export async function learn(
-  question,
-  answer,
-) {
+export async function learn(question, answer, { verified = false } = {}) {
   if (!canLearn(question, answer)) {
-    return {
-      learned: false,
-      reason: "invalid",
-    };
+    return { learned: false, reason: "invalid" };
   }
 
-  const normalizedQuestion =
-    normalizeText(question);
+  const normalizedQuestion = normalizeText(question);
+  const index = learned.findIndex(
+    (item) => normalizeText(item.question) === normalizedQuestion,
+  );
 
-  const existingIndex =
-    learned.findIndex(
-      (item) =>
-        normalizeText(
-          item.question,
-        ) === normalizedQuestion,
-    );
+  if (index !== -1) {
+    const existing = learned[index];
 
-  // ==============================================
-  // Nếu câu đã tồn tại -> cập nhật answer
-  // ==============================================
-
-  if (existingIndex !== -1) {
-    const existing =
-      learned[existingIndex];
-
-    // Answer giống rồi
-    if (
-      normalizeText(
-        existing.answer,
-      ) === normalizeText(answer)
-    ) {
-      return {
-        learned: false,
-        reason: "duplicate",
-      };
+    if (normalizeText(existing.answer) === normalizeText(answer)) {
+      return { learned: false, reason: "duplicate", id: existing.id };
     }
 
-    learned[existingIndex] = {
+    learned[index] = {
       ...existing,
-
       answer: String(answer).trim(),
-
-      updatedAt:
-        new Date().toISOString(),
+      // Câu trả lời đổi -> phải duyệt lại
+      verified: Boolean(verified),
+      updatedAt: new Date().toISOString(),
     };
 
     await saveLearned();
 
-    return {
-      learned: true,
-      updated: true,
-    };
+    return { learned: true, updated: true, id: existing.id };
   }
 
-  // ==============================================
-  // Thêm kiến thức mới
-  // ==============================================
+  const item = normalizeItem(
+    { question, answer, verified, createdAt: new Date().toISOString() },
+    { store: "learned", defaultVerified: false },
+  );
 
-  learned.push({
-    question: String(
-      question,
-    ).trim(),
+  learned.push(item);
+  await saveLearned();
 
-    answer: String(
-      answer,
-    ).trim(),
+  return { learned: true, updated: false, id: item.id };
+}
 
-    learnedAt:
-      new Date().toISOString(),
-  });
+// ======================================================
+// DUYỆT / XOÁ (dùng cho admin + nút 👍)
+// ======================================================
 
-  // Chỉ giữ 500 mẫu gần nhất
-  learned =
-    learned.slice(-MAX_LEARNED);
+export async function verifyLearned(id, verified = true) {
+  const item = learned.find((entry) => entry.id === id);
+  if (!item) return false;
+
+  item.verified = Boolean(verified);
+  item.updatedAt = new Date().toISOString();
 
   await saveLearned();
 
-  return {
-    learned: true,
-    updated: false,
-  };
+  return true;
+}
+
+// Xoá đúng kho chứa nó — trước đây admin chỉ xoá được knowledge.json
+export async function removeItem(id) {
+  const learnedIndex = learned.findIndex((item) => item.id === id);
+
+  if (learnedIndex !== -1) {
+    learned.splice(learnedIndex, 1);
+    await saveLearned();
+    return "learned";
+  }
+
+  const knowledgeIndex = knowledge.findIndex((item) => item.id === id);
+
+  if (knowledgeIndex !== -1) {
+    knowledge.splice(knowledgeIndex, 1);
+    await saveKnowledge();
+    return "knowledge";
+  }
+
+  return null;
+}
+
+// Đưa một bản ghi đã duyệt từ learned sang kho seed
+export async function promoteToKnowledge(id) {
+  const index = learned.findIndex((item) => item.id === id);
+  if (index === -1) return false;
+
+  const [item] = learned.splice(index, 1);
+
+  knowledge.push({ ...item, store: "knowledge", verified: true });
+
+  await saveLearned();
+  await saveKnowledge();
+
+  return true;
 }
 
 // ======================================================
-// COUNTS
+// TRUY VẤN
 // ======================================================
 
-export function knowledgeCount() {
-  return knowledge.length;
-}
+export const knowledgeCount = () => knowledge.length;
+export const learnedCount = () => learned.length;
+export const pendingCount = () => learned.filter((item) => !item.verified).length;
+export const totalKnowledgeCount = () => knowledge.length + learned.length;
+export const userMemoryCount = (email) => findUserMemory(email).length;
 
-export function learnedCount() {
-  return learned.length;
-}
-
-export function totalKnowledgeCount() {
-  return (
-    knowledge.length +
-    learned.length
-  );
-}
-
-export function userMemoryCount(email) {
-  return findUserMemory(email).length;
-}
-
-// ======================================================
-// GET DATA
-// Có thể dùng cho admin
-// ======================================================
-
-export function getKnowledge() {
-  return [...knowledge];
-}
-
-export function getLearned() {
-  return [...learned];
-}
-
-export function getAllUserMemory() {
-  return { ...userMemory };
-}
+export const getKnowledge = () => [...knowledge];
+export const getLearned = () => [...learned];
+export const getAllItems = () => [...knowledge, ...learned];
+export const getAllUserMemory = () => ({ ...userMemory });

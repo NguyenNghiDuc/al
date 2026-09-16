@@ -5,7 +5,23 @@ import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { calculate } from '../lib/calculator.js';
 import { askAI } from './services/aiService.js';
-import { findRelevantKnowledge, findUserMemory, initializeMemory, knowledgeCount, learn, learnedCount, rememberUser, saveKnowledge } from '../lib/learningMemory.js';
+import { getUser, requireAdmin, signToken } from './middleware/auth.js';
+import {
+	findRelevantKnowledge,
+	findUserMemory,
+	getKnowledge,
+	getLearned,
+	initializeMemory,
+	knowledgeCount,
+	learn,
+	learnedCount,
+	markHit,
+	pendingCount,
+	promoteToKnowledge,
+	rememberUser,
+	removeItem,
+	verifyLearned
+} from '../lib/learningMemory.js';
 
 const port = Number(process.env.PORT) || 4000;
 const webDirectory = join(fileURLToPath(new URL('../../web/', import.meta.url)));
@@ -25,7 +41,7 @@ const hashPassword = (password, salt = randomBytes(16).toString('hex')) => {
 };
 
 const verifyPassword = (password, storedHash) => {
-	const [salt, expectedHash] = storedHash.split(':');
+	const [salt, expectedHash] = String(storedHash || '').split(':');
 	if (!salt || !expectedHash) return false;
 	const actualHash = scryptSync(password, salt, 64);
 	const expectedBuffer = Buffer.from(expectedHash, 'hex');
@@ -65,42 +81,59 @@ const send = (response, status, body, contentType = 'text/plain; charset=utf-8')
 	response.end(body);
 };
 
+const sendJson = (response, status, payload) =>
+	send(response, status, JSON.stringify(payload), contentTypes['.json']);
+
 const readJson = async (request) => {
 	let body = '';
-	for await (const chunk of request) body += chunk;
+	for await (const chunk of request) {
+		body += chunk;
+		// Chặn body quá lớn
+		if (body.length > 1_000_000) throw new Error('payload-too-large');
+	}
 	return JSON.parse(body || '{}');
 };
 
+// ======================================================
+// FALLBACK
+// Trả về { answer, source } để biết câu nào KHÔNG được học.
+// ======================================================
+
 const answerQuestion = (question, relevantKnowledge = []) => {
-	if (relevantKnowledge[0]?.score >= 2) {
-		return relevantKnowledge[0].answer;
+	const best = relevantKnowledge[0];
+
+	// Ngưỡng đã chuẩn hoá (0..1) trong learningMemory
+	if (best && best.score >= 0.45) {
+		markHit(best.id);
+		return { answer: best.answer, source: 'knowledge' };
 	}
 
 	const normalizedQuestion = question.toLowerCase();
+	const canned = (answer) => ({ answer, source: 'canned' });
 
 	if (normalizedQuestion.includes('async') || normalizedQuestion.includes('await')) {
-		return 'async/await giúp viết code bất đồng bộ theo cách dễ đọc hơn. Hàm có async luôn trả về Promise, còn await tạm dừng trong hàm async cho đến khi Promise hoàn tất. Ví dụ: async function loadData() { const response = await fetch("/api/data"); return response.json(); }';
+		return canned('async/await giúp viết code bất đồng bộ theo cách dễ đọc hơn. Hàm có async luôn trả về Promise, còn await tạm dừng trong hàm async cho đến khi Promise hoàn tất. Ví dụ: async function loadData() { const response = await fetch("/api/data"); return response.json(); }');
 	}
 	if (normalizedQuestion.includes('tiếng anh') || normalizedQuestion.includes('tieng anh')) {
-		return 'Bạn có thể bắt đầu với 30 phút mỗi ngày: 10 phút học từ mới, 10 phút nghe một đoạn ngắn và 10 phút viết hoặc nói lại bằng từ của mình. Hãy duy trì một chủ đề nhỏ mỗi tuần để thấy tiến bộ rõ hơn.';
+		return canned('Bạn có thể bắt đầu với 30 phút mỗi ngày: 10 phút học từ mới, 10 phút nghe một đoạn ngắn và 10 phút viết hoặc nói lại bằng từ của mình. Hãy duy trì một chủ đề nhỏ mỗi tuần để thấy tiến bộ rõ hơn.');
 	}
 	if (normalizedQuestion.includes('ý tưởng') || normalizedQuestion.includes('ung dung') || normalizedQuestion.includes('ứng dụng')) {
-		return 'Một ý tưởng phù hợp để bắt đầu là trợ lý học tập cá nhân: người dùng tải tài liệu lên, đặt câu hỏi và nhận câu trả lời kèm trích dẫn. Hãy làm bản đầu tiên thật nhỏ với đăng nhập, tải tài liệu và chat.';
+		return canned('Một ý tưởng phù hợp để bắt đầu là trợ lý học tập cá nhân: người dùng tải tài liệu lên, đặt câu hỏi và nhận câu trả lời kèm trích dẫn. Hãy làm bản đầu tiên thật nhỏ với đăng nhập, tải tài liệu và chat.');
 	}
 	if (normalizedQuestion.includes('xin chào') || normalizedQuestion.includes('hello') || normalizedQuestion.includes('chào')) {
-		return 'Chào bạn. Mình là Kikial. Bạn muốn cùng học, viết code hay phát triển một ý tưởng hôm nay?';
+		return canned('Chào bạn. Mình là Kikial. Bạn muốn cùng học, viết code hay phát triển một ý tưởng hôm nay?');
 	}
 	if (normalizedQuestion.includes('tên gì') || normalizedQuestion.includes('tên là gì') || normalizedQuestion.includes('name')) {
-		return 'Mình là Kikial, trợ lý AI local của bạn.';
+		return canned('Mình là Kikial, trợ lý AI local của bạn.');
 	}
 	if (normalizedQuestion === 'helo' || normalizedQuestion === 'hi' || normalizedQuestion === 'hey') {
-		return 'Chào bạn. Mình là Kikial. Bạn muốn hỏi về code, học tập hay một ý tưởng mới?';
+		return canned('Chào bạn. Mình là Kikial. Bạn muốn hỏi về code, học tập hay một ý tưởng mới?');
 	}
 	if (normalizedQuestion.includes('code') || normalizedQuestion.includes('lập trình') || normalizedQuestion.includes('javascript')) {
-		return 'Mình có thể giúp bạn viết, giải thích và sửa code. Hãy gửi đoạn code hoặc mô tả mục tiêu, lỗi đang gặp và kết quả bạn mong muốn để mình phân tích từng bước.';
+		return canned('Mình có thể giúp bạn viết, giải thích và sửa code. Hãy gửi đoạn code hoặc mô tả mục tiêu, lỗi đang gặp và kết quả bạn mong muốn để mình phân tích từng bước.');
 	}
 
-	return `Mình đã nhận được câu hỏi: “${question}”. Đây là bản demo hỏi đáp của Kikial. Hãy hỏi cụ thể hơn về code, học tập hoặc một ý tưởng để mình trả lời sát hơn nhé.`;
+	return canned(`Mình chưa có đủ dữ liệu chắc chắn để trả lời câu hỏi “${question}”. Bạn có thể cung cấp thêm ngữ cảnh hoặc tài liệu để mình học câu trả lời chính xác hơn.`);
 };
 
 await loadUsers();
@@ -110,34 +143,40 @@ const server = createServer(async (request, response) => {
 	const requestPath = request.url?.split('?')[0] || '/';
 
 	if (requestPath === '/api/health') {
-		send(response, 200, JSON.stringify({
+		sendJson(response, 200, {
 			ok: true,
 			service: 'kikial-backend',
 			knowledgeItems: knowledgeCount(),
-			learnedItems: learnedCount()
-		}), contentTypes['.json']);
+			learnedItems: learnedCount(),
+			pendingItems: pendingCount()
+		});
 		return;
 	}
+
+	// ==================================================
+	// AUTH
+	// ==================================================
 
 	if (request.method === 'POST' && requestPath === '/api/auth/login') {
 		try {
 			const { email, password } = await readJson(request);
 			const emailKey = String(email || '').trim().toLowerCase();
 			const user = users.get(emailKey);
-			const validCredentials = user && verifyPassword(String(password || ''), user.password);
 
-			if (!validCredentials) {
-				send(response, 401, JSON.stringify({ ok: false, message: 'Email hoặc mật khẩu không đúng.' }), contentTypes['.json']);
+			if (!user || !verifyPassword(String(password || ''), user.password)) {
+				sendJson(response, 401, { ok: false, message: 'Email hoặc mật khẩu không đúng.' });
 				return;
 			}
 
-			send(response, 200, JSON.stringify({
+			const role = user.role || 'user';
+
+			sendJson(response, 200, {
 				ok: true,
-				token: `kikial-demo-session-${emailKey}`,
-				user: { name: user.name, email: emailKey, role: user.role || 'user' }
-			}), contentTypes['.json']);
+				token: signToken({ email: emailKey, role, name: user.name }),
+				user: { name: user.name, email: emailKey, role }
+			});
 		} catch {
-			send(response, 400, JSON.stringify({ ok: false, message: 'Dữ liệu đăng nhập không hợp lệ.' }), contentTypes['.json']);
+			sendJson(response, 400, { ok: false, message: 'Dữ liệu đăng nhập không hợp lệ.' });
 		}
 		return;
 	}
@@ -149,35 +188,44 @@ const server = createServer(async (request, response) => {
 			const normalizedName = String(name || '').trim();
 
 			if (!normalizedName || !normalizedEmail.includes('@') || String(password || '').length < 6) {
-				send(response, 400, JSON.stringify({ ok: false, message: 'Vui lòng nhập đủ thông tin và mật khẩu từ 6 ký tự.' }), contentTypes['.json']);
+				sendJson(response, 400, { ok: false, message: 'Vui lòng nhập đủ thông tin và mật khẩu từ 6 ký tự.' });
 				return;
 			}
 			if (users.has(normalizedEmail)) {
-				send(response, 409, JSON.stringify({ ok: false, message: 'Email này đã được đăng ký.' }), contentTypes['.json']);
+				sendJson(response, 409, { ok: false, message: 'Email này đã được đăng ký.' });
 				return;
 			}
 
-			users.set(normalizedEmail, { name: normalizedName, password: hashPassword(password) });
+			// role bị thiếu ở bản cũ -> user.role là undefined
+			users.set(normalizedEmail, { name: normalizedName, password: hashPassword(password), role: 'user' });
 			await saveUsers();
-			send(response, 201, JSON.stringify({
+
+			sendJson(response, 201, {
 				ok: true,
-				token: `kikial-demo-session-${normalizedEmail}`,
+				token: signToken({ email: normalizedEmail, role: 'user', name: normalizedName }),
 				user: { name: normalizedName, email: normalizedEmail, role: 'user' }
-			}), contentTypes['.json']);
+			});
 		} catch {
-			send(response, 400, JSON.stringify({ ok: false, message: 'Dữ liệu đăng ký không hợp lệ.' }), contentTypes['.json']);
+			sendJson(response, 400, { ok: false, message: 'Dữ liệu đăng ký không hợp lệ.' });
 		}
 		return;
 	}
 
+	// ==================================================
+	// CHAT
+	// ==================================================
+
 	if (request.method === 'POST' && requestPath === '/api/chat') {
 		try {
-			const { message, history = [], userEmail = '' } = await readJson(request);
+			const { message, history = [] } = await readJson(request);
 			const question = String(message || '').trim();
-			const emailKey = String(userEmail).trim().toLowerCase();
+
+			// Email lấy từ token, KHÔNG lấy từ body (tránh đọc memory người khác)
+			const account = getUser(request);
+			const emailKey = account?.email || '';
 
 			if (!question) {
-				send(response, 400, JSON.stringify({ ok: false, message: 'Vui lòng nhập câu hỏi.' }), contentTypes['.json']);
+				sendJson(response, 400, { ok: false, message: 'Vui lòng nhập câu hỏi.' });
 				return;
 			}
 
@@ -187,59 +235,153 @@ const server = createServer(async (request, response) => {
 				: [];
 			const relevantKnowledge = calculation ? [] : findRelevantKnowledge(question);
 			const personalMemory = findUserMemory(emailKey);
-			const answer = calculation?.answer || await askAI(
-				question,
-				safeHistory,
-				relevantKnowledge,
-				(prompt) => answerQuestion(prompt, relevantKnowledge),
-				personalMemory
-			);
-			await learn(question, answer);
 
-			const nameMatch = question.match(/(?:tôi tên là|tên tôi là|mình tên là)\s+([^,.!?]+)/i);
+			let answer;
+			let source;
+			let learnedId = null;
+
+			if (calculation) {
+				answer = calculation.answer;
+				source = 'calc';
+			} else {
+				try {
+					answer = await askAI(
+						question,
+						safeHistory,
+						relevantKnowledge,
+						() => {
+							// Chưa cấu hình AI -> ném để rơi xuống fallback bên dưới
+							throw new Error('ai-not-configured');
+						},
+						personalMemory
+					);
+					source = 'ai';
+				} catch (error) {
+					// Bản cũ: askAI lỗi -> cả request trả 400.
+					console.warn('[Kikial] AI lỗi, dùng fallback:', error.message);
+					const fallback = answerQuestion(question, relevantKnowledge);
+					answer = fallback.answer;
+					source = fallback.source;
+				}
+			}
+
+			// CHỈ học câu do AI thật sinh ra, và phải chờ duyệt.
+			if (source === 'ai') {
+				const result = await learn(question, answer);
+				learnedId = result.id || null;
+			}
+
+			const nameMatch = question.match(/(?:tôi tên là|tên tôi là|mình tên là|t tên là|tên mình là)\s+([^,.!?\n]+)/i);
 			if (emailKey && nameMatch?.[1]) {
 				await rememberUser(emailKey, `Tên người dùng là ${nameMatch[1].trim()}.`);
 			}
-			send(response, 200, JSON.stringify({ ok: true, answer }), contentTypes['.json']);
-		} catch {
-			send(response, 400, JSON.stringify({ ok: false, message: 'Không thể xử lý câu hỏi.' }), contentTypes['.json']);
+
+			sendJson(response, 200, { ok: true, answer, source, learnedId });
+		} catch (error) {
+			console.error('[Kikial] /api/chat lỗi:', error.message);
+			sendJson(response, 400, { ok: false, message: 'Không thể xử lý câu hỏi.' });
 		}
 		return;
 	}
 
-	if (request.method === 'GET' && requestPath === '/api/admin/knowledge') {
-		try {
-			const items = await loadKnowledge();
-			send(response, 200, JSON.stringify({ ok: true, items: items || [] }), contentTypes['.json']);
-		} catch {
-			send(response, 500, JSON.stringify({ ok: false, message: 'Không tải được dữ liệu học tập.' }), contentTypes['.json']);
-		}
-		return;
-	}
+	// ==================================================
+	// FEEDBACK — nút 👍 duyệt câu trả lời thành kiến thức
+	// ==================================================
 
-	if (request.method === 'DELETE' && requestPath.startsWith('/api/admin/knowledge/')) {
+	if (request.method === 'POST' && requestPath === '/api/chat/feedback') {
 		try {
-			const id = decodeURIComponent(requestPath.split('/').pop() || '');
+			const { id, helpful } = await readJson(request);
+
 			if (!id) {
-				send(response, 400, JSON.stringify({ ok: false, message: 'Thiếu mã bản ghi cần xóa.' }), contentTypes['.json']);
+				sendJson(response, 400, { ok: false, message: 'Thiếu mã bản ghi.' });
 				return;
 			}
 
-			const knowledge = await loadKnowledge();
-			const index = knowledge.findIndex((item) => item.learnedAt === id);
-			if (index === -1) {
-				send(response, 404, JSON.stringify({ ok: false, message: 'Không tìm thấy bản ghi.' }), contentTypes['.json']);
+			if (helpful === false) {
+				const removed = await removeItem(id);
+				sendJson(response, 200, { ok: true, removed: Boolean(removed) });
 				return;
 			}
 
-			knowledge.splice(index, 1);
-			await saveKnowledge(knowledge);
-			send(response, 200, JSON.stringify({ ok: true, message: 'Đã xoá ghi nhớ.' }), contentTypes['.json']);
+			const verified = await verifyLearned(id, true);
+			sendJson(response, verified ? 200 : 404, {
+				ok: verified,
+				message: verified ? 'Đã duyệt kiến thức.' : 'Không tìm thấy bản ghi.'
+			});
 		} catch {
-			send(response, 500, JSON.stringify({ ok: false, message: 'Không xoá được bản ghi.' }), contentTypes['.json']);
+			sendJson(response, 400, { ok: false, message: 'Dữ liệu phản hồi không hợp lệ.' });
 		}
 		return;
 	}
+
+	// ==================================================
+	// ADMIN (yêu cầu role admin)
+	// ==================================================
+
+	if (requestPath.startsWith('/api/admin/')) {
+		if (!requireAdmin(request)) {
+			sendJson(response, 403, { ok: false, message: 'Bạn không có quyền truy cập.' });
+			return;
+		}
+
+		if (request.method === 'GET' && requestPath === '/api/admin/knowledge') {
+			// Trả cả 2 kho: seed + tự học (bản cũ chỉ trả knowledge.json)
+			sendJson(response, 200, {
+				ok: true,
+				items: [...getLearned(), ...getKnowledge()],
+				counts: {
+					knowledge: knowledgeCount(),
+					learned: learnedCount(),
+					pending: pendingCount()
+				}
+			});
+			return;
+		}
+
+		if (request.method === 'POST' && requestPath === '/api/admin/knowledge/verify') {
+			try {
+				const { id, verified = true, promote = false } = await readJson(request);
+				const ok = promote ? await promoteToKnowledge(id) : await verifyLearned(id, verified);
+				sendJson(response, ok ? 200 : 404, {
+					ok,
+					message: ok ? 'Đã cập nhật.' : 'Không tìm thấy bản ghi.'
+				});
+			} catch {
+				sendJson(response, 400, { ok: false, message: 'Dữ liệu không hợp lệ.' });
+			}
+			return;
+		}
+
+		if (request.method === 'DELETE' && requestPath.startsWith('/api/admin/knowledge/')) {
+			try {
+				const id = decodeURIComponent(requestPath.split('/').pop() || '');
+
+				if (!id) {
+					sendJson(response, 400, { ok: false, message: 'Thiếu mã bản ghi cần xóa.' });
+					return;
+				}
+
+				const store = await removeItem(id);
+
+				if (!store) {
+					sendJson(response, 404, { ok: false, message: 'Không tìm thấy bản ghi.' });
+					return;
+				}
+
+				sendJson(response, 200, { ok: true, store, message: 'Đã xoá ghi nhớ.' });
+			} catch {
+				sendJson(response, 500, { ok: false, message: 'Không xoá được bản ghi.' });
+			}
+			return;
+		}
+
+		sendJson(response, 404, { ok: false, message: 'Không tìm thấy endpoint.' });
+		return;
+	}
+
+	// ==================================================
+	// STATIC
+	// ==================================================
 
 	if (requestPath === '/' || requestPath === '/index.html') {
 		response.writeHead(302, { Location: 'http://localhost:5173/' });

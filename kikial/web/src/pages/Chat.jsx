@@ -33,6 +33,11 @@ export default function Chat({ user, onLogout, onOpenAdmin }) {
   const [learnedCount, setLearnedCount] = useState(0);
   const [healthLoading, setHealthLoading] = useState(true);
 
+  const authHeaders = () => ({
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${localStorage.getItem("kikial-token") || ""}`,
+  });
+
   // =========================
   // LẤY SỐ KIẾN THỨC ĐÃ HỌC
   // =========================
@@ -48,6 +53,7 @@ export default function Chat({ user, onLogout, onOpenAdmin }) {
 
       // Hỗ trợ một số tên field backend có thể trả về.
       const count =
+        data.learnedItems ??
         data.learned ??
         data.learnedCount ??
         data.memoryCount ??
@@ -104,9 +110,7 @@ export default function Chat({ user, onLogout, onOpenAdmin }) {
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: authHeaders(),
         body: JSON.stringify({
           message: question,
           history,
@@ -134,6 +138,8 @@ export default function Chat({ user, onLogout, onOpenAdmin }) {
         {
           role: "assistant",
           content: answer,
+          learnedId: result.learnedId || null,
+          source: result.source || "canned",
         },
       ]);
 
@@ -152,6 +158,20 @@ export default function Chat({ user, onLogout, onOpenAdmin }) {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function sendFeedback(message, helpful) {
+    if (!message.learnedId) return;
+
+    await fetch("/api/chat/feedback", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ id: message.learnedId, helpful }),
+    });
+
+    setMessages((current) => current.map((item) =>
+      item === message ? { ...item, feedback: helpful } : item,
+    ));
   }
 
   // =========================
@@ -328,6 +348,13 @@ export default function Chat({ user, onLogout, onOpenAdmin }) {
                       </strong>
 
                       <p>{message.content}</p>
+                      {message.role === "assistant" && message.learnedId && (
+                        <div className="message-feedback">
+                          <button type="button" onClick={() => sendFeedback(message, true)} aria-label="Câu trả lời hữu ích">👍</button>
+                          <button type="button" onClick={() => sendFeedback(message, false)} aria-label="Câu trả lời chưa hữu ích">👎</button>
+                          {message.feedback && <small>Đã ghi nhận</small>}
+                        </div>
+                      )}
                     </div>
                   </article>
                 ),

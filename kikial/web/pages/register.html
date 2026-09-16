@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101014">
+  <title>Đăng ký | Kikial</title>
+  <link rel="stylesheet" href="../src/styles/global.css">
+  <link rel="stylesheet" href="../src/styles/login.css">
+  <script src="../register.js" defer></script>
+</head>
+<body>
+  <main class="login-screen" aria-labelledby="register-title">
+    <section class="login-panel">
+      <a class="login-brand" href="../login.html" aria-label="Kikial trang đăng nhập"><span>✳</span> kikial<span>.</span></a>
+      <p class="eyebrow">BẮT ĐẦU KHÔNG GIAN RIÊNG</p>
+      <h1 id="register-title">Tạo tài khoản<br><em>của bạn.</em></h1>
+      <p class="login-description">Đăng ký để lưu lại những cuộc trò chuyện và ý tưởng của bạn.</p>
+      <form id="register-form" class="login-form">
+        <label for="register-name">Tên hiển thị</label>
+        <input id="register-name" name="name" type="text" autocomplete="name" placeholder="Nguyễn Văn A" required>
+        <label for="register-email">Email</label>
+        <input id="register-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+        <label for="register-password">Mật khẩu</label>
+        <input id="register-password" name="password" type="password" autocomplete="new-password" placeholder="Tối thiểu 6 ký tự" minlength="6" required>
+        <label for="register-confirm-password">Nhập lại mật khẩu</label>
+        <input id="register-confirm-password" name="confirmPassword" type="password" autocomplete="new-password" placeholder="Nhập lại mật khẩu" minlength="6" required>
+        <button type="submit" class="login-submit">Tạo tài khoản <span aria-hidden="true">↗</span></button>
+        <p id="register-message" class="login-message" role="alert"></p>
+      </form>
+      <p class="login-switch">Đã có tài khoản? <a href="../login.html">Đăng nhập</a></p>
+    </section>
+    <div class="login-art" aria-hidden="true"><span>✳</span><strong>Mở ra<br>điều mới.</strong></div>
+  </main>
+</body>
+</html>

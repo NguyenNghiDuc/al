@@ -1,0 +1,10 @@
+{
+  "name": "al",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Landing page của AL",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

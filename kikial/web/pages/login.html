@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101014">
+  <title>Đăng nhập | Kikial</title>
+  <link rel="stylesheet" href="../src/styles/global.css">
+  <link rel="stylesheet" href="../src/styles/login.css">
+  <script src="../login.js" defer></script>
+</head>
+<body>
+  <main class="login-screen" aria-labelledby="login-title">
+    <section class="login-panel">
+      <a class="login-brand" href="../login.html" aria-label="Kikial trang đăng nhập"><span>✳</span> kikial<span>.</span></a>
+      <p class="eyebrow">KHÔNG GIAN AI CÁ NHÂN</p>
+      <h1 id="login-title">Chào mừng<br><em>trở lại.</em></h1>
+      <p class="login-description">Đăng nhập để tiếp tục những ý tưởng đang còn dang dở.</p>
+      <form id="login-form" class="login-form">
+        <label for="login-email">Email</label>
+        <input id="login-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+        <label for="login-password">Mật khẩu</label>
+        <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Tối thiểu 6 ký tự" required>
+        <button type="submit" class="login-submit">Đăng nhập <span aria-hidden="true">↗</span></button>
+        <p id="login-message" class="login-message" role="alert"></p>
+      </form>
+      <p class="login-hint">Tài khoản demo: demo@kikial.local · 123456</p>
+      <p class="login-switch">Chưa có tài khoản? <a href="../register.html">Đăng ký ngay</a></p>
+    </section>
+    <div class="login-art" aria-hidden="true"><span>✳</span><strong>Ý tưởng<br>của bạn.</strong></div>
+  </main>
+</body>
+</html>

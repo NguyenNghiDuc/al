@@ -3,8 +3,9 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { calculate } from '../lib/calculator.js';
 import { askAI } from './services/aiService.js';
-import { findRelevantKnowledge, knowledgeCount, learn, loadKnowledge, saveKnowledge } from '../lib/learningMemory.js';
+import { findRelevantKnowledge, findUserMemory, initializeMemory, knowledgeCount, learn, learnedCount, rememberUser, saveKnowledge } from '../lib/learningMemory.js';
 
 const port = Number(process.env.PORT) || 4000;
 const webDirectory = join(fileURLToPath(new URL('../../web/', import.meta.url)));
@@ -70,7 +71,11 @@ const readJson = async (request) => {
 	return JSON.parse(body || '{}');
 };
 
-const answerQuestion = (question) => {
+const answerQuestion = (question, relevantKnowledge = []) => {
+	if (relevantKnowledge[0]?.score >= 2) {
+		return relevantKnowledge[0].answer;
+	}
+
 	const normalizedQuestion = question.toLowerCase();
 
 	if (normalizedQuestion.includes('async') || normalizedQuestion.includes('await')) {
@@ -99,13 +104,18 @@ const answerQuestion = (question) => {
 };
 
 await loadUsers();
-await loadKnowledge();
+await initializeMemory();
 
 const server = createServer(async (request, response) => {
 	const requestPath = request.url?.split('?')[0] || '/';
 
 	if (requestPath === '/api/health') {
-		send(response, 200, JSON.stringify({ ok: true, service: 'kikial-backend', learnedItems: knowledgeCount() }), contentTypes['.json']);
+		send(response, 200, JSON.stringify({
+			ok: true,
+			service: 'kikial-backend',
+			knowledgeItems: knowledgeCount(),
+			learnedItems: learnedCount()
+		}), contentTypes['.json']);
 		return;
 	}
 
@@ -162,20 +172,34 @@ const server = createServer(async (request, response) => {
 
 	if (request.method === 'POST' && requestPath === '/api/chat') {
 		try {
-			const { message, history = [] } = await readJson(request);
+			const { message, history = [], userEmail = '' } = await readJson(request);
 			const question = String(message || '').trim();
+			const emailKey = String(userEmail).trim().toLowerCase();
 
 			if (!question) {
 				send(response, 400, JSON.stringify({ ok: false, message: 'Vui lòng nhập câu hỏi.' }), contentTypes['.json']);
 				return;
 			}
 
+			const calculation = calculate(question);
 			const safeHistory = Array.isArray(history)
 				? history.filter((item) => ['user', 'assistant'].includes(item?.role) && typeof item?.content === 'string').slice(-12)
 				: [];
-			const relevantKnowledge = findRelevantKnowledge(question);
-			const answer = await askAI(question, safeHistory, relevantKnowledge, answerQuestion);
+			const relevantKnowledge = calculation ? [] : findRelevantKnowledge(question);
+			const personalMemory = findUserMemory(emailKey);
+			const answer = calculation?.answer || await askAI(
+				question,
+				safeHistory,
+				relevantKnowledge,
+				(prompt) => answerQuestion(prompt, relevantKnowledge),
+				personalMemory
+			);
 			await learn(question, answer);
+
+			const nameMatch = question.match(/(?:tôi tên là|tên tôi là|mình tên là)\s+([^,.!?]+)/i);
+			if (emailKey && nameMatch?.[1]) {
+				await rememberUser(emailKey, `Tên người dùng là ${nameMatch[1].trim()}.`);
+			}
 			send(response, 200, JSON.stringify({ ok: true, answer }), contentTypes['.json']);
 		} catch {
 			send(response, 400, JSON.stringify({ ok: false, message: 'Không thể xử lý câu hỏi.' }), contentTypes['.json']);

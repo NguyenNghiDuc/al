@@ -1,0 +1,457 @@
+[
+  {
+    "question": "Mày tên là gì?",
+    "answer": "Mình là Kikial, trợ lý AI của bạn. Mình có thể hỗ trợ học tập, lập trình, giải thích kiến thức và phát triển ý tưởng.",
+    "learnedAt": "2026-09-16T10:00:00.000Z"
+  },
+  {
+    "question": "Kikial là gì?",
+    "answer": "Kikial là một trợ lý AI được xây dựng để trò chuyện, hỗ trợ học tập, lập trình, giải đáp câu hỏi và ghi nhớ kiến thức phục vụ những cuộc trò chuyện sau.",
+    "learnedAt": "2026-09-16T10:01:00.000Z"
+  },
+  {
+    "question": "AI là gì?",
+    "answer": "AI hay trí tuệ nhân tạo là công nghệ giúp máy tính thực hiện các nhiệm vụ như hiểu ngôn ngữ, nhận dạng hình ảnh, dự đoán, lập kế hoạch và tạo nội dung.",
+    "learnedAt": "2026-09-16T10:02:00.000Z"
+  },
+  {
+    "question": "Machine Learning là gì?",
+    "answer": "Machine Learning là một nhánh của AI cho phép máy tính học các quy luật từ dữ liệu để dự đoán hoặc đưa ra kết quả mà không cần lập trình riêng từng trường hợp.",
+    "learnedAt": "2026-09-16T10:03:00.000Z"
+  },
+  {
+    "question": "Deep Learning là gì?",
+    "answer": "Deep Learning là một nhánh của Machine Learning sử dụng mạng nơ-ron nhiều lớp để học các mẫu phức tạp từ lượng dữ liệu lớn.",
+    "learnedAt": "2026-09-16T10:04:00.000Z"
+  },
+  {
+    "question": "LLM là gì?",
+    "answer": "LLM là mô hình ngôn ngữ lớn được huấn luyện trên lượng lớn văn bản để xử lý và tạo ngôn ngữ tự nhiên như trả lời câu hỏi, tóm tắt và viết nội dung.",
+    "learnedAt": "2026-09-16T10:05:00.000Z"
+  },
+  {
+    "question": "RAG là gì?",
+    "answer": "RAG là kỹ thuật kết hợp mô hình AI với hệ thống tìm kiếm kiến thức. Khi người dùng đặt câu hỏi, hệ thống tìm dữ liệu liên quan rồi đưa dữ liệu đó vào ngữ cảnh để AI tạo câu trả lời.",
+    "learnedAt": "2026-09-16T10:06:00.000Z"
+  },
+  {
+    "question": "JavaScript là gì?",
+    "answer": "JavaScript là ngôn ngữ lập trình phổ biến trên web. Nó có thể chạy trên trình duyệt và phía máy chủ thông qua các môi trường như Node.js.",
+    "learnedAt": "2026-09-16T10:07:00.000Z"
+  },
+  {
+    "question": "async await trong JavaScript là gì?",
+    "answer": "async/await giúp xử lý code bất đồng bộ dễ đọc hơn. Hàm async trả về Promise và await chờ một Promise hoàn thành trước khi tiếp tục thực hiện phần code tiếp theo.",
+    "learnedAt": "2026-09-16T10:08:00.000Z"
+  },
+  {
+    "question": "Promise trong JavaScript là gì?",
+    "answer": "Promise là đối tượng đại diện cho kết quả của một tác vụ bất đồng bộ. Promise có thể ở trạng thái pending, fulfilled hoặc rejected.",
+    "learnedAt": "2026-09-16T10:09:00.000Z"
+  },
+  {
+    "question": "React là gì?",
+    "answer": "React là thư viện JavaScript dùng để xây dựng giao diện người dùng dựa trên component. React thường được sử dụng để phát triển các ứng dụng web tương tác.",
+    "learnedAt": "2026-09-16T10:10:00.000Z"
+  },
+  {
+    "question": "useState trong React dùng để làm gì?",
+    "answer": "useState là React Hook dùng để tạo và cập nhật state trong function component. Khi state thay đổi, React có thể render lại giao diện.",
+    "learnedAt": "2026-09-16T10:11:00.000Z"
+  },
+  {
+    "question": "useEffect trong React dùng để làm gì?",
+    "answer": "useEffect là React Hook dùng để thực hiện các side effect như gọi API, đăng ký sự kiện hoặc đồng bộ dữ liệu sau khi component render.",
+    "learnedAt": "2026-09-16T10:12:00.000Z"
+  },
+  {
+    "question": "Node.js là gì?",
+    "answer": "Node.js là môi trường chạy JavaScript bên ngoài trình duyệt. Nó thường được sử dụng để xây dựng backend, API và các ứng dụng máy chủ.",
+    "learnedAt": "2026-09-16T10:13:00.000Z"
+  },
+  {
+    "question": "Express là gì?",
+    "answer": "Express là framework web cho Node.js giúp xây dựng server và API dễ dàng hơn thông qua routing, middleware và xử lý request-response.",
+    "learnedAt": "2026-09-16T10:14:00.000Z"
+  },
+  {
+    "question": "API là gì?",
+    "answer": "API là giao diện cho phép các phần mềm giao tiếp với nhau. Ví dụ frontend có thể gửi request đến API backend để lấy hoặc cập nhật dữ liệu.",
+    "learnedAt": "2026-09-16T10:15:00.000Z"
+  },
+  {
+    "question": "REST API là gì?",
+    "answer": "REST API là kiểu thiết kế API thường sử dụng HTTP và các phương thức như GET, POST, PUT, PATCH và DELETE để thao tác với tài nguyên.",
+    "learnedAt": "2026-09-16T10:16:00.000Z"
+  },
+  {
+    "question": "GET dùng để làm gì?",
+    "answer": "GET thường được sử dụng để lấy dữ liệu từ server và không nên làm thay đổi tài nguyên trên server.",
+    "learnedAt": "2026-09-16T10:17:00.000Z"
+  },
+  {
+    "question": "POST dùng để làm gì?",
+    "answer": "POST thường được sử dụng để gửi dữ liệu đến server nhằm tạo tài nguyên mới hoặc thực hiện một thao tác.",
+    "learnedAt": "2026-09-16T10:18:00.000Z"
+  },
+  {
+    "question": "JSON là gì?",
+    "answer": "JSON là định dạng văn bản dùng để biểu diễn và trao đổi dữ liệu. JSON hỗ trợ object, array, string, number, boolean và null.",
+    "learnedAt": "2026-09-16T10:19:00.000Z"
+  },
+  {
+    "question": "Database là gì?",
+    "answer": "Database là hệ thống dùng để lưu trữ, tổ chức và truy xuất dữ liệu một cách có cấu trúc.",
+    "learnedAt": "2026-09-16T10:20:00.000Z"
+  },
+  {
+    "question": "MySQL là gì?",
+    "answer": "MySQL là hệ quản trị cơ sở dữ liệu quan hệ sử dụng SQL để lưu trữ, truy vấn và quản lý dữ liệu.",
+    "learnedAt": "2026-09-16T10:21:00.000Z"
+  },
+  {
+    "question": "SQLite là gì?",
+    "answer": "SQLite là hệ quản trị cơ sở dữ liệu quan hệ nhỏ gọn lưu dữ liệu trong một file và không cần chạy database server riêng.",
+    "learnedAt": "2026-09-16T10:22:00.000Z"
+  },
+  {
+    "question": "SQL là gì?",
+    "answer": "SQL là ngôn ngữ dùng để làm việc với cơ sở dữ liệu quan hệ, bao gồm truy vấn, thêm, sửa, xóa và định nghĩa cấu trúc dữ liệu.",
+    "learnedAt": "2026-09-16T10:23:00.000Z"
+  },
+  {
+    "question": "Flutter là gì?",
+    "answer": "Flutter là framework mã nguồn mở dùng để phát triển ứng dụng đa nền tảng từ một codebase và sử dụng ngôn ngữ Dart.",
+    "learnedAt": "2026-09-16T10:24:00.000Z"
+  },
+  {
+    "question": "Dart là gì?",
+    "answer": "Dart là ngôn ngữ lập trình được sử dụng phổ biến với Flutter để phát triển ứng dụng mobile, web và desktop.",
+    "learnedAt": "2026-09-16T10:25:00.000Z"
+  },
+  {
+    "question": "List trong Dart là gì?",
+    "answer": "List trong Dart là cấu trúc dùng để lưu nhiều phần tử theo thứ tự. Phần tử đầu tiên có index bằng 0.",
+    "learnedAt": "2026-09-16T10:26:00.000Z"
+  },
+  {
+    "question": "add trong List Dart dùng để làm gì?",
+    "answer": "Phương thức add dùng để thêm một phần tử vào cuối List. Ví dụ ds.add(4) sẽ thêm số 4 vào cuối danh sách ds.",
+    "learnedAt": "2026-09-16T10:27:00.000Z"
+  },
+  {
+    "question": "insert trong Dart dùng để làm gì?",
+    "answer": "Phương thức insert dùng để chèn phần tử vào một vị trí xác định trong List. Ví dụ ds.insert(2, 5) chèn số 5 vào index 2.",
+    "learnedAt": "2026-09-16T10:28:00.000Z"
+  },
+  {
+    "question": "for in trong Dart dùng để làm gì?",
+    "answer": "for-in dùng để duyệt lần lượt từng phần tử trong một collection. Ví dụ for (int x in ds) { print(x); } sẽ lần lượt in các phần tử của ds.",
+    "learnedAt": "2026-09-16T10:29:00.000Z"
+  },
+  {
+    "question": "Làm sao tìm số lớn nhất trong List Dart?",
+    "answer": "Có thể đặt max bằng phần tử đầu tiên rồi dùng for-in duyệt List. Nếu phần tử hiện tại lớn hơn max thì cập nhật max.",
+    "learnedAt": "2026-09-16T10:30:00.000Z"
+  },
+  {
+    "question": "for trong Dart hoạt động như thế nào?",
+    "answer": "Vòng lặp for thường gồm giá trị khởi tạo, điều kiện và bước cập nhật. Vòng lặp tiếp tục chạy trong khi điều kiện còn đúng.",
+    "learnedAt": "2026-09-16T10:31:00.000Z"
+  },
+  {
+    "question": "break trong Dart dùng để làm gì?",
+    "answer": "break dùng để kết thúc ngay vòng lặp hiện tại và tiếp tục thực hiện code nằm sau vòng lặp.",
+    "learnedAt": "2026-09-16T10:32:00.000Z"
+  },
+  {
+    "question": "if trong lập trình dùng để làm gì?",
+    "answer": "if dùng để kiểm tra một điều kiện. Nếu điều kiện đúng thì khối lệnh bên trong if được thực hiện.",
+    "learnedAt": "2026-09-16T10:33:00.000Z"
+  },
+  {
+    "question": "Biến là gì?",
+    "answer": "Biến là vùng lưu trữ có tên được chương trình sử dụng để giữ một giá trị có thể được đọc hoặc thay đổi trong quá trình chạy.",
+    "learnedAt": "2026-09-16T10:34:00.000Z"
+  },
+  {
+    "question": "Hàm là gì?",
+    "answer": "Hàm là một khối code được đóng gói để thực hiện một nhiệm vụ nhất định và có thể được gọi lại nhiều lần.",
+    "learnedAt": "2026-09-16T10:35:00.000Z"
+  },
+  {
+    "question": "Git là gì?",
+    "answer": "Git là hệ thống quản lý phiên bản giúp theo dõi thay đổi của source code, tạo nhánh và phối hợp phát triển phần mềm.",
+    "learnedAt": "2026-09-16T10:36:00.000Z"
+  },
+  {
+    "question": "GitHub là gì?",
+    "answer": "GitHub là nền tảng lưu trữ và cộng tác trên các repository Git, hỗ trợ quản lý source code, issue và pull request.",
+    "learnedAt": "2026-09-16T10:37:00.000Z"
+  },
+  {
+    "question": "git add dùng để làm gì?",
+    "answer": "git add đưa các thay đổi vào staging area để chuẩn bị cho lần commit tiếp theo.",
+    "learnedAt": "2026-09-16T10:38:00.000Z"
+  },
+  {
+    "question": "git commit dùng để làm gì?",
+    "answer": "git commit tạo một bản ghi của các thay đổi đã được đưa vào staging area.",
+    "learnedAt": "2026-09-16T10:39:00.000Z"
+  },
+  {
+    "question": "git push dùng để làm gì?",
+    "answer": "git push gửi các commit từ repository local lên remote repository như GitHub.",
+    "learnedAt": "2026-09-16T10:40:00.000Z"
+  },
+  {
+    "question": "Frontend là gì?",
+    "answer": "Frontend là phần giao diện và trải nghiệm mà người dùng trực tiếp tương tác trong một ứng dụng.",
+    "learnedAt": "2026-09-16T10:41:00.000Z"
+  },
+  {
+    "question": "Backend là gì?",
+    "answer": "Backend là phần xử lý phía máy chủ, thường đảm nhiệm API, logic nghiệp vụ, xác thực và giao tiếp với cơ sở dữ liệu.",
+    "learnedAt": "2026-09-16T10:42:00.000Z"
+  },
+  {
+    "question": "HTML là gì?",
+    "answer": "HTML là ngôn ngữ đánh dấu dùng để tạo cấu trúc nội dung cho trang web.",
+    "learnedAt": "2026-09-16T10:43:00.000Z"
+  },
+  {
+    "question": "CSS là gì?",
+    "answer": "CSS được sử dụng để định dạng giao diện web như màu sắc, kích thước, khoảng cách, bố cục và responsive.",
+    "learnedAt": "2026-09-16T10:44:00.000Z"
+  },
+  {
+    "question": "Responsive là gì?",
+    "answer": "Responsive là cách thiết kế giao diện có khả năng thích nghi với nhiều kích thước màn hình như máy tính, tablet và điện thoại.",
+    "learnedAt": "2026-09-16T10:45:00.000Z"
+  },
+  {
+    "question": "TCP là gì?",
+    "answer": "TCP là giao thức truyền tải hướng kết nối, cung cấp cơ chế kiểm soát thứ tự và độ tin cậy khi truyền dữ liệu.",
+    "learnedAt": "2026-09-16T10:46:00.000Z"
+  },
+  {
+    "question": "UDP là gì?",
+    "answer": "UDP là giao thức truyền tải không kết nối, có overhead thấp nhưng không đảm bảo dữ liệu đến nơi hoặc đến đúng thứ tự.",
+    "learnedAt": "2026-09-16T10:47:00.000Z"
+  },
+  {
+    "question": "IP là gì?",
+    "answer": "Địa chỉ IP được sử dụng để định danh thiết bị hoặc giao diện mạng trong mạng sử dụng Internet Protocol.",
+    "learnedAt": "2026-09-16T10:48:00.000Z"
+  },
+  {
+    "question": "DNS là gì?",
+    "answer": "DNS là hệ thống phân giải tên miền, giúp ánh xạ tên như example.com sang địa chỉ IP và hỗ trợ nhiều loại bản ghi khác.",
+    "learnedAt": "2026-09-16T10:49:00.000Z"
+  },
+  {
+    "question": "Hệ điều hành là gì?",
+    "answer": "Hệ điều hành là phần mềm quản lý tài nguyên phần cứng và cung cấp môi trường, dịch vụ cho các chương trình hoạt động.",
+    "learnedAt": "2026-09-16T10:50:00.000Z"
+  },
+  {
+    "question": "RAM là gì?",
+    "answer": "RAM là bộ nhớ truy cập ngẫu nhiên dùng để lưu tạm dữ liệu và chương trình đang được CPU sử dụng.",
+    "learnedAt": "2026-09-16T10:51:00.000Z"
+  },
+  {
+    "question": "CPU là gì?",
+    "answer": "CPU là bộ xử lý trung tâm thực hiện các lệnh của chương trình và xử lý các phép toán, điều khiển.",
+    "learnedAt": "2026-09-16T10:52:00.000Z"
+  },
+  {
+    "question": "Stack là gì?",
+    "answer": "Stack là cấu trúc dữ liệu hoạt động theo nguyên tắc LIFO: phần tử được thêm vào sau cùng sẽ được lấy ra trước.",
+    "learnedAt": "2026-09-16T10:53:00.000Z"
+  },
+  {
+    "question": "Queue là gì?",
+    "answer": "Queue là cấu trúc dữ liệu thường hoạt động theo nguyên tắc FIFO: phần tử được thêm vào trước sẽ được lấy ra trước.",
+    "learnedAt": "2026-09-16T10:54:00.000Z"
+  },
+  {
+    "question": "Thuật toán là gì?",
+    "answer": "Thuật toán là một chuỗi bước hữu hạn và rõ ràng được thiết kế để giải quyết một bài toán hoặc thực hiện một nhiệm vụ.",
+    "learnedAt": "2026-09-16T10:55:00.000Z"
+  },
+  {
+    "question": "Debug là gì?",
+    "answer": "Debug là quá trình tìm nguyên nhân và sửa lỗi trong chương trình.",
+    "learnedAt": "2026-09-16T10:56:00.000Z"
+  },
+  {
+    "question": "Lỗi syntax là gì?",
+    "answer": "Syntax error là lỗi cú pháp xảy ra khi code không tuân theo quy tắc cú pháp của ngôn ngữ lập trình.",
+    "learnedAt": "2026-09-16T10:57:00.000Z"
+  },
+  {
+    "question": "Lỗi runtime là gì?",
+    "answer": "Runtime error là lỗi xảy ra trong lúc chương trình đang thực thi, dù chương trình có thể đã vượt qua bước phân tích cú pháp hoặc biên dịch.",
+    "learnedAt": "2026-09-16T10:58:00.000Z"
+  },
+  {
+    "question": "Cách tính tổng hai số",
+    "answer": "Để tính tổng hai số a và b, dùng công thức a + b. Ví dụ 15 + 20 = 35.",
+    "learnedAt": "2026-09-16T11:00:00.000Z"
+  },
+  {
+    "question": "Cách tính hiệu hai số",
+    "answer": "Để tính hiệu của a và b, dùng công thức a - b. Ví dụ 20 - 8 = 12.",
+    "learnedAt": "2026-09-16T11:01:00.000Z"
+  },
+  {
+    "question": "Cách tính tích hai số",
+    "answer": "Để tính tích của a và b, dùng công thức a × b. Ví dụ 12 × 5 = 60.",
+    "learnedAt": "2026-09-16T11:02:00.000Z"
+  },
+  {
+    "question": "Cách tính thương hai số",
+    "answer": "Để tính thương của a và b, dùng a ÷ b với điều kiện b khác 0. Ví dụ 20 ÷ 4 = 5.",
+    "learnedAt": "2026-09-16T11:03:00.000Z"
+  },
+  {
+    "question": "Cách tính phần trăm",
+    "answer": "Muốn tính x phần trăm của y, dùng công thức x/100 × y. Ví dụ 20% của 500 là 20/100 × 500 = 100.",
+    "learnedAt": "2026-09-16T11:04:00.000Z"
+  },
+  {
+    "question": "Cách tính một số chiếm bao nhiêu phần trăm của số khác",
+    "answer": "Dùng công thức phần trăm = số cần so sánh / tổng số × 100%. Ví dụ 20 trên 80 là 20/80 × 100% = 25%.",
+    "learnedAt": "2026-09-16T11:05:00.000Z"
+  },
+  {
+    "question": "Cách tính phần trăm tăng",
+    "answer": "Phần trăm tăng = (giá trị mới - giá trị cũ) / giá trị cũ × 100%. Ví dụ từ 100 lên 120 thì tăng 20%.",
+    "learnedAt": "2026-09-16T11:06:00.000Z"
+  },
+  {
+    "question": "Cách tính phần trăm giảm",
+    "answer": "Phần trăm giảm = (giá trị cũ - giá trị mới) / giá trị cũ × 100%. Ví dụ từ 200 xuống 150 thì giảm 25%.",
+    "learnedAt": "2026-09-16T11:07:00.000Z"
+  },
+  {
+    "question": "Cách tính trung bình cộng",
+    "answer": "Trung bình cộng = tổng các giá trị chia cho số lượng giá trị. Ví dụ (8 + 7 + 9) / 3 = 8.",
+    "learnedAt": "2026-09-16T11:08:00.000Z"
+  },
+  {
+    "question": "Cách tính lũy thừa",
+    "answer": "a mũ n nghĩa là nhân a với chính nó n lần khi n là số nguyên dương. Ví dụ 2^3 = 2 × 2 × 2 = 8.",
+    "learnedAt": "2026-09-16T11:09:00.000Z"
+  },
+  {
+    "question": "Căn bậc hai là gì",
+    "answer": "Căn bậc hai của một số không âm x là số mà khi bình phương cho kết quả bằng x. Ví dụ căn bậc hai số học của 25 là 5.",
+    "learnedAt": "2026-09-16T11:10:00.000Z"
+  },
+  {
+    "question": "Cách giải phương trình bậc nhất ax + b = 0",
+    "answer": "Nếu a khác 0 thì phương trình ax + b = 0 có nghiệm x = -b/a. Ví dụ 2x + 4 = 0 thì x = -2.",
+    "learnedAt": "2026-09-16T11:11:00.000Z"
+  },
+  {
+    "question": "Công thức phương trình bậc hai",
+    "answer": "Với ax^2 + bx + c = 0 và a khác 0, tính delta = b^2 - 4ac. Nếu delta > 0 có hai nghiệm, delta = 0 có nghiệm kép, delta < 0 không có nghiệm thực.",
+    "learnedAt": "2026-09-16T11:12:00.000Z"
+  },
+  {
+    "question": "Cách tính diện tích hình chữ nhật",
+    "answer": "Diện tích hình chữ nhật S = chiều dài × chiều rộng. Ví dụ dài 10 m và rộng 5 m thì S = 50 m².",
+    "learnedAt": "2026-09-16T11:13:00.000Z"
+  },
+  {
+    "question": "Cách tính chu vi hình chữ nhật",
+    "answer": "Chu vi hình chữ nhật P = 2 × (chiều dài + chiều rộng). Ví dụ dài 10 m, rộng 5 m thì P = 30 m.",
+    "learnedAt": "2026-09-16T11:14:00.000Z"
+  },
+  {
+    "question": "Cách tính diện tích hình tròn",
+    "answer": "Diện tích hình tròn S = πr², trong đó r là bán kính. Ví dụ r = 5 thì S = 25π, xấp xỉ 78.54.",
+    "learnedAt": "2026-09-16T11:15:00.000Z"
+  },
+  {
+    "question": "Cách tính chu vi hình tròn",
+    "answer": "Chu vi hình tròn C = 2πr. Ví dụ r = 5 thì C = 10π, xấp xỉ 31.42.",
+    "learnedAt": "2026-09-16T11:16:00.000Z"
+  },
+  {
+    "question": "Cách tính diện tích tam giác",
+    "answer": "Diện tích tam giác S = đáy × chiều cao / 2. Ví dụ đáy 10 và chiều cao 6 thì diện tích bằng 30.",
+    "learnedAt": "2026-09-16T11:17:00.000Z"
+  },
+  {
+    "question": "Định lý Pythagore là gì",
+    "answer": "Trong tam giác vuông, bình phương cạnh huyền bằng tổng bình phương hai cạnh góc vuông: c² = a² + b².",
+    "learnedAt": "2026-09-16T11:18:00.000Z"
+  },
+  {
+    "question": "Cách tính vận tốc",
+    "answer": "Vận tốc trung bình được tính bằng quãng đường chia cho thời gian: v = s/t. Ví dụ đi 120 km trong 2 giờ thì vận tốc trung bình là 60 km/h.",
+    "learnedAt": "2026-09-16T11:19:00.000Z"
+  },
+  {
+    "question": "Cách tính quãng đường",
+    "answer": "Nếu vận tốc không đổi, quãng đường được tính bằng s = v × t. Ví dụ vận tốc 60 km/h trong 3 giờ thì đi được 180 km.",
+    "learnedAt": "2026-09-16T11:20:00.000Z"
+  },
+  {
+    "question": "Cách tính thời gian",
+    "answer": "Nếu vận tốc không đổi, thời gian được tính bằng t = s/v. Ví dụ đi 150 km với vận tốc 50 km/h thì mất 3 giờ.",
+    "learnedAt": "2026-09-16T11:21:00.000Z"
+  },
+  {
+    "question": "Cách tính tiền sau khi giảm giá",
+    "answer": "Giá sau giảm = giá ban đầu × (1 - phần trăm giảm/100). Ví dụ món hàng 500000 đồng giảm 20% thì còn 400000 đồng.",
+    "learnedAt": "2026-09-16T11:22:00.000Z"
+  },
+  {
+    "question": "Cách tính lãi đơn",
+    "answer": "Lãi đơn = tiền gốc × lãi suất mỗi kỳ × số kỳ. Tổng tiền bằng tiền gốc cộng tiền lãi.",
+    "learnedAt": "2026-09-16T11:23:00.000Z"
+  },
+  {
+    "question": "Cách tính BMI",
+    "answer": "BMI = cân nặng tính bằng kg / (chiều cao tính bằng mét)^2. Đây chỉ là một chỉ số sàng lọc tổng quát và không tự nó chẩn đoán tình trạng sức khỏe.",
+    "learnedAt": "2026-09-16T11:24:00.000Z"
+  },
+  {
+    "question": "Tôi tên là Đức",
+    "answer": "Mình đã nhận được câu hỏi: “Tôi tên là Đức”. Đây là bản demo hỏi đáp của Kikial. Hãy hỏi cụ thể hơn về code, học tập hoặc một ý tưởng để mình trả lời sát hơn nhé.",
+    "learnedAt": "2026-09-16T09:36:58.394Z"
+  },
+  {
+    "question": "Mày tên là gì?",
+    "answer": "Mình là Kikial, trợ lý AI của bạn. Mình có thể hỗ trợ học tập, lập trình, giải thích kiến thức và phát triển ý tưởng.",
+    "learnedAt": "2026-09-16T09:40:12.626Z"
+  },
+  {
+    "question": "AI là gì?",
+    "answer": "Mình đã nhận được câu hỏi: “AI là gì?”. Đây là bản demo hỏi đáp của Kikial. Hãy hỏi cụ thể hơn về code, học tập hoặc một ý tưởng để mình trả lời sát hơn nhé.",
+    "learnedAt": "2026-09-16T09:40:20.270Z"
+  },
+  {
+    "question": "Mày tên là gì?",
+    "answer": "Mình là Kikial, trợ lý AI của bạn. Mình có thể hỗ trợ học tập, lập trình, giải thích kiến thức và phát triển ý tưởng.",
+    "learnedAt": "2026-09-16T09:41:58.090Z"
+  },
+  {
+    "question": "AI là gì?",
+    "answer": "Mình đã nhận được câu hỏi: “AI là gì?”. Đây là bản demo hỏi đáp của Kikial. Hãy hỏi cụ thể hơn về code, học tập hoặc một ý tưởng để mình trả lời sát hơn nhé.",
+    "learnedAt": "2026-09-16T09:42:05.094Z"
+  },
+  {
+    "question": "Viết lời giới thiệu bản thân cho sinh viên CNTT.",
+    "answer": "LLM là mô hình ngôn ngữ lớn được huấn luyện trên lượng lớn văn bản để xử lý và tạo ngôn ngữ tự nhiên như trả lời câu hỏi, tóm tắt và viết nội dung.",
+    "learnedAt": "2026-09-16T09:43:28.684Z"
+  },
+  {
+    "question": "Gợi ý 5 ý tưởng ứng dụng AI cho đồ án sinh viên.",
+    "answer": "LLM là mô hình ngôn ngữ lớn được huấn luyện trên lượng lớn văn bản để xử lý và tạo ngôn ngữ tự nhiên như trả lời câu hỏi, tóm tắt và viết nội dung.",
+    "learnedAt": "2026-09-16T09:43:32.059Z"
+  }
+]

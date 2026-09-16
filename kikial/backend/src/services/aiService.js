@@ -1,12 +1,15 @@
 const defaultApiUrl = 'https://api.openai.com/v1/chat/completions';
 
-export const askAI = async (question, history = [], knowledge = [], fallback) => {
+export const askAI = async (question, history = [], knowledge = [], fallback, userMemory = []) => {
     const apiKey = process.env.AI_API_KEY;
     const apiUrl = process.env.AI_API_URL;
     if (!apiKey && !apiUrl) return fallback(question);
 
     const learnedContext = knowledge.length > 0
         ? `\n\nKinh nghiệm đã học từ các cuộc trò chuyện trước:\n${knowledge.map((item) => `- Hỏi: ${item.question}\n  Đáp: ${item.answer}`).join("\n")}`
+        : "";
+    const personalContext = userMemory.length > 0
+        ? `\n\nThông tin cần nhớ về người dùng hiện tại:\n${userMemory.map((item) => `- ${item}`).join("\n")}`
         : "";
 
     const headers = { 'Content-Type': 'application/json' };
@@ -21,7 +24,7 @@ export const askAI = async (question, history = [], knowledge = [], fallback) =>
             messages: [
                 {
                     role: 'system',
-                    content: `Bạn là Kikial, một trợ lý AI hữu ích. Hãy nhớ ngữ cảnh cuộc trò chuyện và sử dụng kinh nghiệm liên quan đã học, nhưng không bịa thông tin. Trả lời bằng tiếng Việt rõ ràng, chính xác, có cấu trúc. Nếu câu hỏi cần code, hãy dùng ví dụ ngắn và dễ chạy.${learnedContext}`
+                    content: `Bạn là Kikial, một trợ lý AI hữu ích. Hãy nhớ ngữ cảnh cuộc trò chuyện và sử dụng kinh nghiệm liên quan đã học, nhưng không bịa thông tin. Trả lời bằng tiếng Việt rõ ràng, chính xác, có cấu trúc. Nếu câu hỏi cần code, hãy dùng ví dụ ngắn và dễ chạy.${learnedContext}${personalContext}`
                 },
                 ...history.slice(-12),
                 { role: 'user', content: question }

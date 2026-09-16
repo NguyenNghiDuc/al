@@ -39,7 +39,7 @@ export default function Register({ onSuccess, onLogin }) {
   return (
     <main className="auth-page">
       <section className="auth-card">
-        <a className="auth-brand" href="/login.html">✳ kikial<span>.</span></a>
+        <a className="auth-brand" href="/login.html">✳ KiKiAl<span>.</span></a>
         <p className="eyebrow">BẮT ĐẦU KHÔNG GIAN RIÊNG</p>
         <h1>Tạo tài khoản<br /><em>của bạn.</em></h1>
         <p className="auth-description">Đăng ký để lưu lại những cuộc trò chuyện và ý tưởng của bạn.</p>

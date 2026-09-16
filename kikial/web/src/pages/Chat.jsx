@@ -110,6 +110,7 @@ export default function Chat({ user, onLogout, onOpenAdmin }) {
         body: JSON.stringify({
           message: question,
           history,
+          userEmail: user?.email || "",
         }),
       });
 

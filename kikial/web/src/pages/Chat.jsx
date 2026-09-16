@@ -14,10 +14,10 @@ const MENU = [
 ];
 
 const PROMPTS = [
-  ["Viết code", "Giải thích async/await trong JavaScript kèm ví dụ."],
-  ["Học tiếng Anh", "Lập kế hoạch học tiếng Anh 30 phút mỗi ngày."],
-  ["Ý tưởng AI", "Gợi ý 5 đồ án AI phù hợp sinh viên CNTT."],
-  ["Sửa lỗi Flutter", "Hướng dẫn kiểm tra lỗi Dio không kết nối backend."],
+  { title: "Giải thích", prompt: "Giải thích async/await trong JavaScript bằng ví dụ dễ hiểu.", icon: "◌", tone: "green" },
+  { title: "Gợi ý", prompt: "Lập kế hoạch học tiếng Anh 30 phút mỗi ngày.", icon: "◍", tone: "orange" },
+  { title: "Tóm tắt", prompt: "Gợi ý 5 ý tưởng ứng dụng AI cho đồ án sinh viên.", icon: "◐", tone: "purple" },
+  { title: "Viết lại", prompt: "Viết lời giới thiệu bản thân cho sinh viên CNTT.", icon: "◈", tone: "blue" },
 ];
 
 const QUESTIONS = [
@@ -665,7 +665,7 @@ function ChatWorkspace({ user, onLogout }) {
 
       <aside className={`ki-sidebar ${menuOpen ? "ki-open" : ""}`}>
         <div className="ki-brand">
-          <strong>✦ Kikial.</strong>
+          <strong>Kikial.</strong>
 
           <button
             type="button"
@@ -677,14 +677,22 @@ function ChatWorkspace({ user, onLogout }) {
           </button>
         </div>
 
+        <div className="ki-brand-sub">Lưu đồng hành cùng bạn</div>
+
         <button
           type="button"
-          className="ki-primary"
+          className="ki-new-chat"
           onClick={newChat}
           disabled={busy}
         >
-          ＋ Cuộc trò chuyện mới
+          <span className="plus">＋</span>
+          New chat
         </button>
+
+        <div className="ki-sidebar-search">
+          <span className="icon">⌕</span>
+          <input placeholder="Tìm kiếm" aria-label="Tìm kiếm" />
+        </div>
 
         <nav className="ki-nav" aria-label="Menu chính">
           {MENU.map(([id, icon, label]) => (
@@ -695,7 +703,7 @@ function ChatWorkspace({ user, onLogout }) {
               aria-current={page === id ? "page" : undefined}
               onClick={() => navigate(id)}
             >
-              <span aria-hidden="true">{icon}</span>
+              <span className="nav-icon" aria-hidden="true">{icon}</span>
               {label}
             </button>
           ))}
@@ -729,13 +737,15 @@ function ChatWorkspace({ user, onLogout }) {
             </div>
           </div>
 
-          <button type="button" onClick={() => navigate("settings")}>
-            {health === null
-              ? "Đang kết nối…"
-              : health.ok
-                ? "● Backend hoạt động"
-                : "○ Mất kết nối"}
-          </button>
+          <div className="ki-header-actions">
+            <button type="button" className="ki-status" onClick={() => navigate("settings")}>
+              {health === null
+                ? "Đang kết nối…"
+                : health.ok
+                  ? "● Trực tuyến"
+                  : "○ Mất kết nối"}
+            </button>
+          </div>
         </header>
 
         {notice && (
@@ -778,14 +788,16 @@ function ChatWorkspace({ user, onLogout }) {
                     <p>Hôm nay bạn muốn học, viết hay khám phá điều gì?</p>
 
                     <div className="ki-grid">
-                      {PROMPTS.map(([title, prompt]) => (
+                      {PROMPTS.map(({ title, prompt, icon, tone }) => (
                         <button
                           type="button"
                           key={title}
                           disabled={busy}
                           onClick={() => preparePrompt(prompt)}
                         >
-                          {title} ↗
+                          <span className={`mini-icon ${tone}`}>{icon}</span>
+                          <strong>{title}</strong>
+                          <small>{prompt}</small>
                         </button>
                       ))}
                     </div>
@@ -843,7 +855,7 @@ function ChatWorkspace({ user, onLogout }) {
                 </p>
 
                 <div className="ki-grid">
-                  {PROMPTS.map(([title, prompt]) => (
+                  {PROMPTS.map(({ title, prompt, icon, tone }) => (
                     <button
                       type="button"
                       className="ki-card"
@@ -851,6 +863,7 @@ function ChatWorkspace({ user, onLogout }) {
                       disabled={busy}
                       onClick={() => preparePrompt(prompt)}
                     >
+                      <span className={`mini-icon ${tone}`}>{icon}</span>
                       <h3>{title}</h3>
                       <p>{prompt}</p>
                       <span>Mở trong chat ↗</span>
@@ -1324,6 +1337,52 @@ function ChatWorkspace({ user, onLogout }) {
           </footer>
         )}
       </main>
+
+      <aside className="ki-right-rail">
+        <div className="ki-right-box">
+          <div className="ki-right-banner">
+            <div className="ki-avatar" aria-hidden="true" />
+            <div className="ki-right-copy">
+              <strong>Kikial AI</strong>
+              <small>AI cá nhân của bạn</small>
+            </div>
+          </div>
+
+          <div className="ki-right-list">
+            <div className="ki-right-item">
+              <div className="left">
+                <span className="dot">◉</span>
+                <span className="label">Trợ lý học tập</span>
+              </div>
+              <span className="value">36%</span>
+            </div>
+            <div className="ki-right-item">
+              <div className="left">
+                <span className="dot">◎</span>
+                <span className="label">Lập kế hoạch</span>
+              </div>
+              <span className="value">19%</span>
+            </div>
+            <div className="ki-right-item">
+              <div className="left">
+                <span className="dot">✦</span>
+                <span className="label">Tạo nội dung</span>
+              </div>
+              <span className="value">72%</span>
+            </div>
+          </div>
+
+          <div className="ki-right-quiz">
+            <h4>Kiến thức</h4>
+            <ul>
+              <li>JavaScript, ES6</li>
+              <li>React và hooks</li>
+              <li>Node.js backend</li>
+              <li>SQL & database</li>
+            </ul>
+          </div>
+        </div>
+      </aside>
     </div>
   );
 }

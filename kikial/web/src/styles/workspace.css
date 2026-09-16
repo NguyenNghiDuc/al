@@ -1,0 +1,597 @@
+/* Khung ứng dụng */
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+#root {
+  min-width: 0;
+}
+
+.ki-shell {
+  --ki-font: 16px;
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr);
+  width: 100%;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  background: #090d19;
+  color: #edf0fc;
+  font-family: Manrope, system-ui, sans-serif;
+}
+
+.ki-shell *,
+.ki-library-full * {
+  box-sizing: border-box;
+}
+
+/* Các phần tử tương tác */
+
+.ki-shell button,
+.ki-library button,
+.ki-loading button {
+  padding: 10px 14px;
+  border: 1px solid #34415f;
+  border-radius: 10px;
+  background: #182139;
+  color: #edf0fc;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.ki-shell button:hover:not(:disabled),
+.ki-library button:hover:not(:disabled) {
+  border-color: #ffae73;
+  background: #25304b;
+}
+
+.ki-shell button:disabled,
+.ki-library button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ki-shell button:focus-visible,
+.ki-shell a:focus-visible,
+.ki-shell input:focus-visible,
+.ki-shell select:focus-visible,
+.ki-shell textarea:focus-visible {
+  outline: 2px solid #ffac70;
+  outline-offset: 3px;
+}
+
+.ki-shell .ki-primary {
+  border-color: #ff9b58;
+  background: #ff9b58;
+  color: #21140b;
+  font-weight: 700;
+}
+
+.ki-shell .ki-danger {
+  color: #ffc0c0;
+  border-color: #743d48;
+  background: #361f2b;
+}
+
+.ki-shell input:not([type="radio"]):not([type="checkbox"]),
+.ki-shell select,
+.ki-shell textarea,
+.ki-library-full input,
+.ki-library-full select {
+  width: 100%;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #34415f;
+  border-radius: 10px;
+  background: #10182b;
+  color: #edf0fc;
+  font: inherit;
+  font-size: 14px;
+}
+
+.ki-shell textarea {
+  resize: vertical;
+  line-height: 1.7;
+}
+
+.ki-shell select {
+  margin-top: 8px;
+}
+
+.ki-shell label {
+  line-height: 1.8;
+}
+
+.ki-shell h1,
+.ki-shell h2,
+.ki-shell h3 {
+  line-height: 1.4;
+  letter-spacing: normal;
+}
+
+.ki-shell h2 {
+  margin: 0 0 15px;
+  font-size: 25px;
+}
+
+.ki-shell h3 {
+  margin: 10px 0;
+  font-size: 17px;
+}
+
+.ki-muted {
+  color: #a1aecb;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+/* Sidebar */
+
+.ki-sidebar {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 24px 15px;
+  overflow-y: auto;
+  border-right: 1px solid #26314a;
+  background: #0c1120;
+}
+
+.ki-brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 25px;
+}
+
+.ki-brand strong {
+  color: #ffae73;
+  font-size: 26px;
+}
+
+.ki-nav {
+  display: grid;
+  gap: 8px;
+  margin-top: 25px;
+}
+
+.ki-nav button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 10px;
+  text-align: left;
+  background: transparent;
+  border-color: transparent;
+}
+
+.ki-nav .ki-selected {
+  color: #ffe0c8;
+  border-color: #a96941;
+  background: #36251f;
+}
+
+.ki-profile {
+  display: grid;
+  gap: 9px;
+  margin-top: auto;
+  padding-top: 28px;
+  overflow-wrap: anywhere;
+}
+
+.ki-profile strong {
+  font-size: 13px;
+}
+
+.ki-profile small {
+  color: #9aaccd;
+  font-size: 11px;
+}
+
+/* Quan trọng: vùng cuộn */
+
+.ki-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.ki-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  gap: 12px;
+  min-height: 78px;
+  padding: 16px 24px;
+  border-bottom: 1px solid #26314a;
+}
+
+.ki-header h1 {
+  margin: 0 0 4px;
+  font-size: 19px;
+}
+
+.ki-header small {
+  color: #a1aecb;
+}
+
+.ki-scroll {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: #53658b #101626;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ki-scroll::-webkit-scrollbar {
+  width: 9px;
+}
+
+.ki-scroll::-webkit-scrollbar-thumb {
+  border-radius: 12px;
+  background: #53658b;
+}
+
+.ki-scroll::-webkit-scrollbar-track {
+  background: #101626;
+}
+
+.ki-content {
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 28px;
+}
+
+/* Thư viện dùng vùng cuộn của ki-scroll */
+
+.ki-library {
+  width: 100%;
+  min-width: 0;
+  padding-bottom: 40px;
+}
+
+.ki-library-full {
+  height: 100dvh;
+  overflow-y: auto;
+  padding: 25px;
+  background: #090d19;
+  color: #edf0fc;
+}
+
+.ki-library details {
+  margin-top: 14px;
+}
+
+.ki-library summary {
+  color: #c6d3f9;
+  cursor: pointer;
+}
+
+.ki-library .ki-answer {
+  padding-top: 12px;
+}
+
+.ki-library .ki-toolbar input {
+  flex: 1;
+}
+
+.ki-library .ki-toolbar select {
+  width: auto;
+  max-width: 100%;
+  margin: 0;
+}
+
+.ki-badge {
+  padding: 5px 10px;
+  border-radius: 20px;
+  background: #273a5a;
+  color: #d2e2ff;
+  font-size: 12px;
+}
+
+/* Các trang */
+
+.ki-list {
+  display: grid;
+  gap: 18px;
+}
+
+.ki-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.ki-card {
+  min-width: 0;
+  margin: 0;
+  padding: 22px;
+  border: 1px solid #2b3958;
+  border-radius: 15px;
+  background: #121b2e;
+  overflow-wrap: anywhere;
+}
+
+button.ki-card {
+  padding: 22px;
+  text-align: left;
+}
+
+.ki-card p {
+  line-height: 1.8;
+}
+
+.ki-toolbar,
+.ki-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.ki-toolbar {
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.ki-space {
+  margin-top: 18px;
+}
+
+.ki-welcome {
+  max-width: 700px;
+  margin: 45px auto;
+  text-align: center;
+}
+
+.ki-welcome > span {
+  color: #ffae73;
+  font-size: 54px;
+}
+
+.ki-welcome h2 {
+  margin: 20px 0;
+  font-size: clamp(28px, 4vw, 44px);
+}
+
+.ki-welcome p {
+  color: #a1aecb;
+  line-height: 1.8;
+}
+
+.ki-welcome .ki-grid {
+  margin-top: 28px;
+}
+
+/* Hội thoại */
+
+.ki-bubble {
+  width: fit-content;
+  min-width: 0;
+  max-width: 90%;
+  padding: 18px;
+  border: 1px solid #34415f;
+  border-radius: 15px;
+  background: #141f35;
+}
+
+.ki-bubble.ki-user {
+  justify-self: end;
+  background: #352b4c;
+}
+
+.ki-bubble > strong {
+  color: #c4d3f5;
+  font-size: 13px;
+}
+
+.ki-answer {
+  margin: 10px 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: var(--ki-font, 16px);
+  line-height: 1.85;
+}
+
+.ki-bubble .ki-actions {
+  margin-top: 12px;
+}
+
+.ki-bubble small {
+  color: #a1aecb;
+}
+
+.ki-composer {
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 12px 28px 18px;
+}
+
+.ki-composer form {
+  padding: 12px;
+  border: 1px solid #415579;
+  border-radius: 16px;
+  background: #141e32;
+}
+
+.ki-composer textarea {
+  min-height: 60px;
+  max-height: 170px;
+  border: 0;
+  resize: vertical;
+  background: transparent;
+}
+
+.ki-composer .ki-toolbar {
+  margin: 10px 0 0;
+}
+
+.ki-composer > small {
+  display: block;
+  margin-top: 8px;
+  color: #a1aecb;
+  font-size: 11px;
+  text-align: center;
+}
+
+/* Công cụ và bài tập */
+
+.ki-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 13px 0;
+  cursor: pointer;
+}
+
+.ki-option input {
+  flex-shrink: 0;
+  width: 17px;
+  height: 17px;
+  margin-top: 5px;
+  accent-color: #ffab70;
+}
+
+.ki-preview {
+  display: block;
+  max-width: 100%;
+  max-height: 420px;
+  margin: 18px 0;
+  border-radius: 12px;
+  object-fit: contain;
+}
+
+.ki-link {
+  display: inline-block;
+  margin-top: 14px;
+  color: #ffc08f;
+}
+
+.ki-notice {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 12px;
+  padding: 10px 24px;
+  background: #302719;
+  color: #ffdaab;
+  font-size: 13px;
+}
+
+.ki-error {
+  padding: 12px;
+  border-radius: 10px;
+  background: #421f2a;
+  color: #ffc2c2;
+}
+
+.ki-loading {
+  display: grid;
+  place-content: center;
+  gap: 15px;
+  min-height: 100dvh;
+  padding: 24px;
+  background: #090d19;
+  color: #edf0fc;
+  text-align: center;
+}
+
+.ki-mobile {
+  display: none;
+}
+
+/* Điện thoại */
+
+@media (max-width: 760px) {
+  .ki-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ki-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 51;
+    width: 260px;
+    height: 100dvh;
+    transform: translateX(-100%);
+    transition: transform 180ms ease;
+  }
+
+  .ki-sidebar.ki-open {
+    transform: translateX(0);
+  }
+
+  .ki-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: rgba(0, 0, 0, 0.65);
+  }
+
+  .ki-mobile {
+    display: inline-block;
+  }
+
+  .ki-header {
+    min-height: 70px;
+    padding: 12px;
+  }
+
+  .ki-header > button {
+    max-width: 120px;
+    font-size: 11px;
+  }
+
+  .ki-content {
+    padding: 18px 14px;
+  }
+
+  .ki-composer {
+    padding: 10px 12px;
+  }
+
+  .ki-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ki-bubble {
+    max-width: 100%;
+  }
+
+  .ki-card {
+    padding: 16px;
+  }
+
+  .ki-welcome {
+    margin-top: 15px;
+  }
+
+  .ki-notice {
+    padding: 10px 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ki-sidebar {
+    transition: none;
+  }
+}

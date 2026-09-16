@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 
+const authHeaders = () => {
+  const token = localStorage.getItem("kikial-token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 export default function AdminPage({ user, onBack, onLogout }) {
   const [items, setItems] = useState([]);
+  const [counts, setCounts] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
-  const authHeaders = () => ({
-    Authorization: `Bearer ${localStorage.getItem("kikial-token") || ""}`,
-  });
 
   async function loadKnowledge() {
     try {
@@ -16,6 +18,7 @@ export default function AdminPage({ user, onBack, onLogout }) {
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || "Không tải được dữ liệu.");
       setItems(result.items || []);
+      setCounts(result.counts || null);
       setError("");
     } catch (err) {
       setError(err.message || "Lỗi không xác định.");
@@ -38,24 +41,42 @@ export default function AdminPage({ user, onBack, onLogout }) {
     }
   }
 
-  async function verifyKnowledge(id, promote = false) {
+  async function approveKnowledge(id) {
     try {
       const response = await fetch("/api/admin/knowledge/verify", {
         method: "POST",
-        headers: { ...authHeaders(), "Content-Type": "application/json" },
-        body: JSON.stringify({ id, verified: true, promote }),
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ id, verified: true }),
       });
       const result = await response.json();
-      if (!response.ok) throw new Error(result.message || "Không duyệt được dữ liệu.");
-      await loadKnowledge();
+      if (!response.ok) throw new Error(result.message || "Không duyệt được.");
+      setItems((current) =>
+        current.map((item) => (item.id === id ? { ...item, verified: true } : item)),
+      );
     } catch (err) {
-      setError(err.message || "Không duyệt được dữ liệu.");
+      setError(err.message || "Không duyệt được.");
     }
   }
 
   useEffect(() => {
     loadKnowledge();
   }, []);
+
+  const badge = (text, background) => (
+    <span
+      style={{
+        background,
+        color: "white",
+        borderRadius: 999,
+        padding: "2px 10px",
+        fontSize: 11,
+        fontWeight: 700,
+        whiteSpace: "nowrap",
+      }}
+    >
+      {text}
+    </span>
+  );
 
   return (
     <main className="admin-page" style={{ padding: 24, color: "#e5e7eb" }}>
@@ -79,6 +100,11 @@ export default function AdminPage({ user, onBack, onLogout }) {
         <div style={{ background: "#111827", border: "1px solid #374151", borderRadius: 16, padding: 16, marginBottom: 16 }}>
           <strong>{user?.name || "Admin"}</strong>
           <div style={{ color: "#9ca3af", marginTop: 4 }}>{user?.email || "admin@kikial.local"}</div>
+          {counts && (
+            <div style={{ color: "#9ca3af", marginTop: 8, fontSize: 13 }}>
+              Kho gốc: {counts.knowledge} · Tự học: {counts.learned} · Chờ duyệt: {counts.pending}
+            </div>
+          )}
         </div>
 
         {error && (
@@ -99,19 +125,35 @@ export default function AdminPage({ user, onBack, onLogout }) {
               <article key={item.id || `${item.question}-${index}`} style={{ background: "#111827", border: "1px solid #374151", borderRadius: 16, padding: 16 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
                   <div style={{ flex: 1 }}>
-                    <p style={{ margin: "0 0 8px", color: "#a78bfa", fontWeight: 700 }}>
-                      Câu hỏi #{index + 1} · {item.verified ? "Đã duyệt" : "Chờ duyệt"}
-                    </p>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8, flexWrap: "wrap" }}>
+                      <p style={{ margin: 0, color: "#a78bfa", fontWeight: 700 }}>Câu hỏi #{index + 1}</p>
+                      {item.store === "learned"
+                        ? badge("Tự học", "#1d4ed8")
+                        : badge("Kho gốc", "#374151")}
+                      {item.verified
+                        ? badge("Đã duyệt", "#166534")
+                        : badge("Chờ duyệt", "#92400e")}
+                      {item.hits > 0 && badge(`${item.hits} lượt dùng`, "#374151")}
+                    </div>
                     <p style={{ margin: "0 0 8px", whiteSpace: "pre-wrap" }}>{item.question}</p>
                     <p style={{ margin: 0, color: "#d1d5db", whiteSpace: "pre-wrap" }}>{item.answer}</p>
                   </div>
-                  <div style={{ display: "grid", gap: 8 }}>
-                    {!item.verified && item.store === "learned" && (
-                      <button type="button" onClick={() => verifyKnowledge(item.id)} style={{ background: "#166534", color: "white", border: "none", padding: "8px 10px", borderRadius: 10, cursor: "pointer" }}>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {!item.verified && (
+                      <button
+                        type="button"
+                        onClick={() => approveKnowledge(item.id)}
+                        style={{ background: "#166534", color: "white", border: "none", padding: "8px 10px", borderRadius: 10, cursor: "pointer" }}
+                      >
                         Duyệt
                       </button>
                     )}
-                    <button type="button" onClick={() => removeKnowledge(item.id)} style={{ background: "#7f1d1d", color: "white", border: "none", padding: "8px 10px", borderRadius: 10, cursor: "pointer" }}>
+                    <button
+                      type="button"
+                      onClick={() => removeKnowledge(item.id)}
+                      style={{ background: "#7f1d1d", color: "white", border: "none", padding: "8px 10px", borderRadius: 10, cursor: "pointer" }}
+                    >
                       Xóa
                     </button>
                   </div>

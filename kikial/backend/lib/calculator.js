@@ -71,6 +71,21 @@ function parseVietnameseNumber(text) {
     : null;
 }
 
+function expandVietnameseUnits(text) {
+  return String(text).replace(
+    /(-?\d+(?:[.,]\d+)?)\s*(triệu|trieu|nghìn|nghin|ngàn|ngan|tỷ|ty|k)(?![\p{L}\p{N}])/giu,
+    (full, numberText, unit) => {
+      const number = Number(String(numberText).replace(",", "."));
+      if (!Number.isFinite(number)) return full;
+
+      const key = unit.toLowerCase();
+      if (key === "tỷ" || key === "ty") return String(number * 1_000_000_000);
+      if (key === "triệu" || key === "trieu") return String(number * 1_000_000);
+      return String(number * 1_000);
+    },
+  );
+}
+
 function normalizeExpression(expression) {
   return expression
     .toLowerCase()
@@ -429,8 +444,9 @@ function calculate(message) {
   if (
     /[+\-*/×÷:^%]/.test(expression)
   ) {
+    const expanded = expandVietnameseUnits(expression);
     const result =
-      evaluateExpression(expression);
+      evaluateExpression(expanded);
 
     if (result !== null) {
       return {

@@ -1,0 +1,587 @@
+{
+  "label": "before",
+  "baseUrl": "http://127.0.0.1:4400",
+  "total": 50,
+  "passed": 35,
+  "failed": 15,
+  "passRate": 0.7,
+  "retrievalHitRate": 0.75,
+  "memoryAccuracy": 0.5714285714285714,
+  "mathAccuracy": 1,
+  "toolSuccessRate": 0.5,
+  "averageLatency": 11.72,
+  "groups": {
+    "identity": {
+      "total": 4,
+      "passed": 3
+    },
+    "vietnamese": {
+      "total": 5,
+      "passed": 4
+    },
+    "general-qa": {
+      "total": 9,
+      "passed": 5
+    },
+    "coding": {
+      "total": 5,
+      "passed": 2
+    },
+    "math": {
+      "total": 8,
+      "passed": 8
+    },
+    "memory": {
+      "total": 7,
+      "passed": 4
+    },
+    "rag-paraphrase": {
+      "total": 4,
+      "passed": 3
+    },
+    "rag-negative": {
+      "total": 2,
+      "passed": 2
+    },
+    "conversation": {
+      "total": 2,
+      "passed": 1
+    },
+    "hallucination": {
+      "total": 1,
+      "passed": 1
+    },
+    "tool-use": {
+      "total": 2,
+      "passed": 1
+    },
+    "multi-step": {
+      "total": 1,
+      "passed": 1
+    }
+  },
+  "failedCases": [
+    {
+      "id": "identity-who",
+      "group": "identity",
+      "passed": false,
+      "latencyMs": 18,
+      "answer": "AI hay trí tuệ nhân tạo là công nghệ giúp máy tính thực hiện các nhiệm vụ như hiểu ngôn ngữ, nhận dạng hình ảnh, dự đoán, lập kế hoạch và tạo nội dung.",
+      "error": null
+    },
+    {
+      "id": "flutter-purpose",
+      "group": "vietnamese",
+      "passed": false,
+      "latencyMs": 15,
+      "answer": "useState là React Hook dùng để tạo và cập nhật state trong function component. Khi state thay đổi, React có thể render lại giao diện.",
+      "error": null
+    },
+    {
+      "id": "ai-use",
+      "group": "general-qa",
+      "passed": false,
+      "latencyMs": 14,
+      "answer": "LLM là mô hình ngôn ngữ lớn được huấn luyện trên lượng lớn văn bản để xử lý và tạo ngôn ngữ tự nhiên như trả lời câu hỏi, tóm tắt và viết nội dung.",
+      "error": null
+    },
+    {
+      "id": "idea-1",
+      "group": "general-qa",
+      "passed": false,
+      "latencyMs": 20,
+      "answer": "LLM là mô hình ngôn ngữ lớn được huấn luyện trên lượng lớn văn bản để xử lý và tạo ngôn ngữ tự nhiên như trả lời câu hỏi, tóm tắt và viết nội dung.",
+      "error": null
+    },
+    {
+      "id": "idea-2",
+      "group": "general-qa",
+      "passed": false,
+      "latencyMs": 15,
+      "answer": "LLM là mô hình ngôn ngữ lớn được huấn luyện trên lượng lớn văn bản để xử lý và tạo ngôn ngữ tự nhiên như trả lời câu hỏi, tóm tắt và viết nội dung.",
+      "error": null
+    },
+    {
+      "id": "explain-code",
+      "group": "coding",
+      "passed": false,
+      "latencyMs": 12,
+      "answer": "Mình có thể giúp bạn viết, giải thích và sửa code. Hãy gửi đoạn code hoặc mô tả mục tiêu, lỗi đang gặp và kết quả bạn mong muốn để mình phân tích từng bước.",
+      "error": null
+    },
+    {
+      "id": "js-function",
+      "group": "coding",
+      "passed": false,
+      "latencyMs": 13,
+      "answer": "Mình có thể giúp bạn viết, giải thích và sửa code. Hãy gửi đoạn code hoặc mô tả mục tiêu, lỗi đang gặp và kết quả bạn mong muốn để mình phân tích từng bước.",
+      "error": null
+    },
+    {
+      "id": "debug",
+      "group": "coding",
+      "passed": false,
+      "latencyMs": 12,
+      "answer": "Mình có thể giúp bạn viết, giải thích và sửa code. Hãy gửi đoạn code hoặc mô tả mục tiêu, lỗi đang gặp và kết quả bạn mong muốn để mình phân tích từng bước.",
+      "error": null
+    },
+    {
+      "id": "memory-name-read",
+      "group": "memory",
+      "passed": false,
+      "latencyMs": 13,
+      "answer": "Mình là Kikial, trợ lý AI của bạn. Mình có thể hỗ trợ học tập, lập trình, giải thích kiến thức và phát triển ý tưởng.",
+      "error": null
+    },
+    {
+      "id": "memory-study-read",
+      "group": "memory",
+      "passed": false,
+      "latencyMs": 14,
+      "answer": "Mình chưa có đủ dữ liệu chắc chắn để trả lời câu hỏi “Tôi đang học gì?”. Bạn có thể cung cấp thêm ngữ cảnh hoặc tài liệu để mình học câu trả lời chính xác hơn.",
+      "error": null
+    },
+    {
+      "id": "memory-preference-read",
+      "group": "memory",
+      "passed": false,
+      "latencyMs": 11,
+      "answer": "Mình chưa có đủ dữ liệu chắc chắn để trả lời câu hỏi “Tôi thích học theo cách nào?”. Bạn có thể cung cấp thêm ngữ cảnh hoặc tài liệu để mình học câu trả lời chính xác hơn.",
+      "error": null
+    },
+    {
+      "id": "rag-dart",
+      "group": "rag-paraphrase",
+      "passed": false,
+      "latencyMs": 12,
+      "answer": "Mình chưa có đủ dữ liệu chắc chắn để trả lời câu hỏi “Ngôn ngữ nào thường đi cùng Flutter?”. Bạn có thể cung cấp thêm ngữ cảnh hoặc tài liệu để mình học câu trả lời chính xác hơn.",
+      "error": null
+    },
+    {
+      "id": "conversation",
+      "group": "conversation",
+      "passed": false,
+      "latencyMs": 12,
+      "answer": "Vòng lặp for thường gồm giá trị khởi tạo, điều kiện và bước cập nhật. Vòng lặp tiếp tục chạy trong khi điều kiện còn đúng.",
+      "error": null
+    },
+    {
+      "id": "tool-calc",
+      "group": "tool-use",
+      "passed": false,
+      "latencyMs": 10,
+      "answer": "Để tính tổng hai số a và b, dùng công thức a + b. Ví dụ 15 + 20 = 35.",
+      "error": null
+    },
+    {
+      "id": "safe-unknown",
+      "group": "general-qa",
+      "passed": false,
+      "latencyMs": 14,
+      "answer": "Mình chưa có đủ dữ liệu chắc chắn để trả lời câu hỏi “Một sự kiện riêng tư chưa từng được cung cấp có thật không?”. Bạn có thể cung cấp thêm ngữ cảnh hoặc tài liệu để mình học câu trả lời chính xác hơn.",
+      "error": null
+    }
+  ],
+  "results": [
+    {
+      "id": "identity-name",
+      "group": "identity",
+      "passed": true,
+      "latencyMs": 16,
+      "answer": "Mình là Kikial, trợ lý AI của bạn. Mình có thể hỗ trợ học tập, lập trình, giải thích kiến thức và phát triển ý tưởng.",
+      "error": null
+    },
+    {
+      "id": "identity-who",
+      "group": "identity",
+      "passed": false,
+      "latencyMs": 18,
+      "answer": "AI hay trí tuệ nhân tạo là công nghệ giúp máy tính thực hiện các nhiệm vụ như hiểu ngôn ngữ, nhận dạng hình ảnh, dự đoán, lập kế hoạch và tạo nội dung.",
+      "error": null
+    },
+    {
+      "id": "identity-kikial",
+      "group": "identity",
+      "passed": true,
+      "latencyMs": 16,
+      "answer": "Kikial là một trợ lý AI được xây dựng để trò chuyện, hỗ trợ học tập, lập trình, giải đáp câu hỏi và ghi nhớ kiến thức phục vụ những cuộc trò chuyện sau.",
+      "error": null
+    },
+    {
+      "id": "identity-vietnamese",
+      "group": "identity",
+      "passed": true,
+      "latencyMs": 28,
+      "answer": "Mình chưa có đủ dữ liệu chắc chắn để trả lời câu hỏi “Bạn có nói tiếng Việt không?”. Bạn có thể cung cấp thêm ngữ cảnh hoặc tài liệu để mình học câu trả lời chính xác hơn.",
+      "error": null
+    },
+    {
+      "id": "ai",
+      "group": "vietnamese",
+      "passed": true,
+      "latencyMs": 22,
+      "answer": "AI hay trí tuệ nhân tạo là công nghệ giúp máy tính thực hiện các nhiệm vụ như hiểu ngôn ngữ, nhận dạng hình ảnh, dự đoán, lập kế hoạch và tạo nội dung.",
+      "error": null
+    },
+    {
+      "id": "ai-paraphrase",
+      "group": "vietnamese",
+      "passed": true,
+      "latencyMs": 25,
+      "answer": "Mình chưa có đủ dữ liệu chắc chắn để trả lời câu hỏi “Trí tuệ nhân tạo là gì?”. Bạn có thể cung cấp thêm ngữ cảnh hoặc tài liệu để mình học câu trả lời chính xác hơn.",
+      "error": null
+    },
+    {
+      "id": "ml",
+      "group": "vietnamese",
+      "passed": true,
+      "latencyMs": 13,
+      "answer": "Machine Learning là một nhánh của AI cho phép máy tính học các quy luật từ dữ liệu để dự đoán hoặc đưa ra kết quả mà không cần lập trình riêng từng trường hợp.",
+      "error": null
+    },
+    {
+      "id": "flutter-purpose",
+      "group": "vietnamese",
+      "passed": false,
+      "latencyMs": 15,
+      "answer": "useState là React Hook dùng để tạo và cập nhật state trong function component. Khi state thay đổi, React có thể render lại giao diện.",
+      "error": null
+    },
+    {
+      "id": "dart",
+      "group": "vietnamese",
+      "passed": true,
+      "latencyMs": 9,
+      "answer": "Dart là ngôn ngữ lập trình được sử dụng phổ biến với Flutter để phát triển ứng dụng mobile, web và desktop.",
+      "error": null
+    },
+    {
+      "id": "async",
+      "group": "general-qa",
+      "passed": true,
+      "latencyMs": 10,
+      "answer": "async/await giúp viết code bất đồng bộ theo cách dễ đọc hơn. Hàm có async luôn trả về Promise, còn await tạm dừng trong hàm async cho đến khi Promise hoàn tất. Ví dụ: async function loadData() { const response = await fetch(\"/api/data\"); return response.json(); }",
+      "error": null
+    },
+    {
+      "id": "promise",
+      "group": "general-qa",
+      "passed": true,
+      "latencyMs": 10,
+      "answer": "Promise là đối tượng đại diện cho kết quả của một tác vụ bất đồng bộ. Promise có thể ở trạng thái pending, fulfilled hoặc rejected.",
+      "error": null
+    },
+    {
+      "id": "tcp-udp",
+      "group": "general-qa",
+      "passed": true,
+      "latencyMs": 10,
+      "answer": "Mình chưa có đủ dữ liệu chắc chắn để trả lời câu hỏi “TCP và UDP khác nhau thế nào?”. Bạn có thể cung cấp thêm ngữ cảnh hoặc tài liệu để mình học câu trả lời chính xác hơn.",
+      "error": null
+    },
+    {
+      "id": "ai-use",
+      "group": "general-qa",
+      "passed": false,
+      "latencyMs": 14,
+      "answer": "LLM là mô hình ngôn ngữ lớn được huấn luyện trên lượng lớn văn bản để xử lý và tạo ngôn ngữ tự nhiên như trả lời câu hỏi, tóm tắt và viết nội dung.",
+      "error": null
+    },
+    {
+      "id": "node",
+      "group": "general-qa",
+      "passed": true,
+      "latencyMs": 11,
+      "answer": "Node.js là môi trường chạy JavaScript bên ngoài trình duyệt. Nó thường được sử dụng để xây dựng backend, API và các ứng dụng máy chủ.",
+      "error": null
+    },
+    {
+      "id": "http",
+      "group": "general-qa",
+      "passed": true,
+      "latencyMs": 11,
+      "answer": "Mình chưa có đủ dữ liệu chắc chắn để trả lời câu hỏi “HTTP 401 nghĩa là gì?”. Bạn có thể cung cấp thêm ngữ cảnh hoặc tài liệu để mình học câu trả lời chính xác hơn.",
+      "error": null
+    },
+    {
+      "id": "idea-1",
+      "group": "general-qa",
+      "passed": false,
+      "latencyMs": 20,
+      "answer": "LLM là mô hình ngôn ngữ lớn được huấn luyện trên lượng lớn văn bản để xử lý và tạo ngôn ngữ tự nhiên như trả lời câu hỏi, tóm tắt và viết nội dung.",
+      "error": null
+    },
+    {
+      "id": "idea-2",
+      "group": "general-qa",
+      "passed": false,
+      "latencyMs": 15,
+      "answer": "LLM là mô hình ngôn ngữ lớn được huấn luyện trên lượng lớn văn bản để xử lý và tạo ngôn ngữ tự nhiên như trả lời câu hỏi, tóm tắt và viết nội dung.",
+      "error": null
+    },
+    {
+      "id": "explain-code",
+      "group": "coding",
+      "passed": false,
+      "latencyMs": 12,
+      "answer": "Mình có thể giúp bạn viết, giải thích và sửa code. Hãy gửi đoạn code hoặc mô tả mục tiêu, lỗi đang gặp và kết quả bạn mong muốn để mình phân tích từng bước.",
+      "error": null
+    },
+    {
+      "id": "dart-max",
+      "group": "coding",
+      "passed": true,
+      "latencyMs": 12,
+      "answer": "Có thể đặt max bằng phần tử đầu tiên rồi dùng for-in duyệt List. Nếu phần tử hiện tại lớn hơn max thì cập nhật max.",
+      "error": null
+    },
+    {
+      "id": "js-function",
+      "group": "coding",
+      "passed": false,
+      "latencyMs": 13,
+      "answer": "Mình có thể giúp bạn viết, giải thích và sửa code. Hãy gửi đoạn code hoặc mô tả mục tiêu, lỗi đang gặp và kết quả bạn mong muốn để mình phân tích từng bước.",
+      "error": null
+    },
+    {
+      "id": "python-code",
+      "group": "coding",
+      "passed": true,
+      "latencyMs": 13,
+      "answer": "Mình chưa có đủ dữ liệu chắc chắn để trả lời câu hỏi “Viết Python đảo ngược một chuỗi.”. Bạn có thể cung cấp thêm ngữ cảnh hoặc tài liệu để mình học câu trả lời chính xác hơn.",
+      "error": null
+    },
+    {
+      "id": "debug",
+      "group": "coding",
+      "passed": false,
+      "latencyMs": 12,
+      "answer": "Mình có thể giúp bạn viết, giải thích và sửa code. Hãy gửi đoạn code hoặc mô tả mục tiêu, lỗi đang gặp và kết quả bạn mong muốn để mình phân tích từng bước.",
+      "error": null
+    },
+    {
+      "id": "math-basic",
+      "group": "math",
+      "passed": true,
+      "latencyMs": 3,
+      "answer": "25 + 10 * 3 = 55",
+      "error": null
+    },
+    {
+      "id": "math-paren",
+      "group": "math",
+      "passed": true,
+      "latencyMs": 2,
+      "answer": "(100 + 50) * 2 = 300",
+      "error": null
+    },
+    {
+      "id": "math-percent",
+      "group": "math",
+      "passed": true,
+      "latencyMs": 9,
+      "answer": "20% của 5.000.000 = 1.000.000",
+      "error": null
+    },
+    {
+      "id": "math-discount",
+      "group": "math",
+      "passed": true,
+      "latencyMs": 9,
+      "answer": "1.250.000 giảm 17% = 1.037.500\nSố tiền giảm: 212.500",
+      "error": null
+    },
+    {
+      "id": "math-power",
+      "group": "math",
+      "passed": true,
+      "latencyMs": 4,
+      "answer": "2^10 = 1.024",
+      "error": null
+    },
+    {
+      "id": "math-root",
+      "group": "math",
+      "passed": true,
+      "latencyMs": 3,
+      "answer": "√144 = 12",
+      "error": null
+    },
+    {
+      "id": "math-more",
+      "group": "math",
+      "passed": true,
+      "latencyMs": 3,
+      "answer": "12 / 3 + 4 = 8",
+      "error": null
+    },
+    {
+      "id": "math-percent-2",
+      "group": "math",
+      "passed": true,
+      "latencyMs": 4,
+      "answer": "15% của 200.000 = 30.000",
+      "error": null
+    },
+    {
+      "id": "memory-name-write",
+      "group": "memory",
+      "passed": true,
+      "latencyMs": 8,
+      "answer": "Mình đã nhận được câu hỏi: “Tôi tên là Đức”. Đây là bản demo hỏi đáp của Kikial. Hãy hỏi cụ thể hơn về code, học tập hoặc một ý tưởng để mình trả lời sát hơn nhé.",
+      "error": null
+    },
+    {
+      "id": "memory-name-read",
+      "group": "memory",
+      "passed": false,
+      "latencyMs": 13,
+      "answer": "Mình là Kikial, trợ lý AI của bạn. Mình có thể hỗ trợ học tập, lập trình, giải thích kiến thức và phát triển ý tưởng.",
+      "error": null
+    },
+    {
+      "id": "memory-study-write",
+      "group": "memory",
+      "passed": true,
+      "latencyMs": 13,
+      "answer": "Mình chưa có đủ dữ liệu chắc chắn để trả lời câu hỏi “Hiện tại tôi đang học Dart.”. Bạn có thể cung cấp thêm ngữ cảnh hoặc tài liệu để mình học câu trả lời chính xác hơn.",
+      "error": null
+    },
+    {
+      "id": "memory-study-read",
+      "group": "memory",
+      "passed": false,
+      "latencyMs": 14,
+      "answer": "Mình chưa có đủ dữ liệu chắc chắn để trả lời câu hỏi “Tôi đang học gì?”. Bạn có thể cung cấp thêm ngữ cảnh hoặc tài liệu để mình học câu trả lời chính xác hơn.",
+      "error": null
+    },
+    {
+      "id": "memory-preference-write",
+      "group": "memory",
+      "passed": true,
+      "latencyMs": 15,
+      "answer": "Mình chưa có đủ dữ liệu chắc chắn để trả lời câu hỏi “Tôi thích được giải thích bằng ví dụ dễ hiểu.”. Bạn có thể cung cấp thêm ngữ cảnh hoặc tài liệu để mình học câu trả lời chính xác hơn.",
+      "error": null
+    },
+    {
+      "id": "memory-preference-read",
+      "group": "memory",
+      "passed": false,
+      "latencyMs": 11,
+      "answer": "Mình chưa có đủ dữ liệu chắc chắn để trả lời câu hỏi “Tôi thích học theo cách nào?”. Bạn có thể cung cấp thêm ngữ cảnh hoặc tài liệu để mình học câu trả lời chính xác hơn.",
+      "error": null
+    },
+    {
+      "id": "memory-goal",
+      "group": "memory",
+      "passed": true,
+      "latencyMs": 9,
+      "answer": "Mình chưa có đủ dữ liệu chắc chắn để trả lời câu hỏi “Mục tiêu của tôi là làm AI chạy local.”. Bạn có thể cung cấp thêm ngữ cảnh hoặc tài liệu để mình học câu trả lời chính xác hơn.",
+      "error": null
+    },
+    {
+      "id": "rag-flutter-1",
+      "group": "rag-paraphrase",
+      "passed": true,
+      "latencyMs": 10,
+      "answer": "Flutter là framework mã nguồn mở dùng để phát triển ứng dụng đa nền tảng từ một codebase và sử dụng ngôn ngữ Dart.",
+      "error": null
+    },
+    {
+      "id": "rag-flutter-2",
+      "group": "rag-paraphrase",
+      "passed": true,
+      "latencyMs": 11,
+      "answer": "Mình chưa có đủ dữ liệu chắc chắn để trả lời câu hỏi “Framework Flutter có tác dụng gì?”. Bạn có thể cung cấp thêm ngữ cảnh hoặc tài liệu để mình học câu trả lời chính xác hơn.",
+      "error": null
+    },
+    {
+      "id": "rag-flutter-3",
+      "group": "rag-paraphrase",
+      "passed": true,
+      "latencyMs": 10,
+      "answer": "Mình chưa có đủ dữ liệu chắc chắn để trả lời câu hỏi “Có thể dùng Flutter để viết app không?”. Bạn có thể cung cấp thêm ngữ cảnh hoặc tài liệu để mình học câu trả lời chính xác hơn.",
+      "error": null
+    },
+    {
+      "id": "rag-dart",
+      "group": "rag-paraphrase",
+      "passed": false,
+      "latencyMs": 12,
+      "answer": "Mình chưa có đủ dữ liệu chắc chắn để trả lời câu hỏi “Ngôn ngữ nào thường đi cùng Flutter?”. Bạn có thể cung cấp thêm ngữ cảnh hoặc tài liệu để mình học câu trả lời chính xác hơn.",
+      "error": null
+    },
+    {
+      "id": "rag-negative",
+      "group": "rag-negative",
+      "passed": true,
+      "latencyMs": 11,
+      "answer": "AI hay trí tuệ nhân tạo là công nghệ giúp máy tính thực hiện các nhiệm vụ như hiểu ngôn ngữ, nhận dạng hình ảnh, dự đoán, lập kế hoạch và tạo nội dung.",
+      "error": null
+    },
+    {
+      "id": "rag-negative-2",
+      "group": "rag-negative",
+      "passed": true,
+      "latencyMs": 12,
+      "answer": "Mình chưa có đủ dữ liệu chắc chắn để trả lời câu hỏi “TCP và UDP khác nhau thế nào?”. Bạn có thể cung cấp thêm ngữ cảnh hoặc tài liệu để mình học câu trả lời chính xác hơn.",
+      "error": null
+    },
+    {
+      "id": "conversation",
+      "group": "conversation",
+      "passed": false,
+      "latencyMs": 12,
+      "answer": "Vòng lặp for thường gồm giá trị khởi tạo, điều kiện và bước cập nhật. Vòng lặp tiếp tục chạy trong khi điều kiện còn đúng.",
+      "error": null
+    },
+    {
+      "id": "conversation-code",
+      "group": "conversation",
+      "passed": true,
+      "latencyMs": 13,
+      "answer": "Mình chưa có đủ dữ liệu chắc chắn để trả lời câu hỏi “Viết ví dụ cho nó.”. Bạn có thể cung cấp thêm ngữ cảnh hoặc tài liệu để mình học câu trả lời chính xác hơn.",
+      "error": null
+    },
+    {
+      "id": "hallucination",
+      "group": "hallucination",
+      "passed": true,
+      "latencyMs": 11,
+      "answer": "Mình chưa có đủ dữ liệu chắc chắn để trả lời câu hỏi “Thông tin nội bộ không có trong kho là gì?”. Bạn có thể cung cấp thêm ngữ cảnh hoặc tài liệu để mình học câu trả lời chính xác hơn.",
+      "error": null
+    },
+    {
+      "id": "tool-calc",
+      "group": "tool-use",
+      "passed": false,
+      "latencyMs": 10,
+      "answer": "Để tính tổng hai số a và b, dùng công thức a + b. Ví dụ 15 + 20 = 35.",
+      "error": null
+    },
+    {
+      "id": "tool-calc-2",
+      "group": "tool-use",
+      "passed": true,
+      "latencyMs": 3,
+      "answer": "1.000 tăng 10% = 1.100\nSố tăng thêm: 100",
+      "error": null
+    },
+    {
+      "id": "multi-step",
+      "group": "multi-step",
+      "passed": true,
+      "latencyMs": 12,
+      "answer": "Mình chưa có đủ dữ liệu chắc chắn để trả lời câu hỏi “Lập kế hoạch học Dart trong 7 ngày, mỗi ngày có mục tiêu và bài tập.”. Bạn có thể cung cấp thêm ngữ cảnh hoặc tài liệu để mình học câu trả lời chính xác hơn.",
+      "error": null
+    },
+    {
+      "id": "safe-unknown",
+      "group": "general-qa",
+      "passed": false,
+      "latencyMs": 14,
+      "answer": "Mình chưa có đủ dữ liệu chắc chắn để trả lời câu hỏi “Một sự kiện riêng tư chưa từng được cung cấp có thật không?”. Bạn có thể cung cấp thêm ngữ cảnh hoặc tài liệu để mình học câu trả lời chính xác hơn.",
+      "error": null
+    }
+  ]
+}

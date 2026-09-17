@@ -1,0 +1,466 @@
+{
+  "label": "after-final6",
+  "baseUrl": "http://127.0.0.1:4400",
+  "total": 50,
+  "passed": 50,
+  "failed": 0,
+  "passRate": 1,
+  "retrievalHitRate": 1,
+  "memoryAccuracy": 1,
+  "mathAccuracy": 1,
+  "toolSuccessRate": 1,
+  "averageLatency": 40.74,
+  "groups": {
+    "identity": {
+      "total": 4,
+      "passed": 4
+    },
+    "vietnamese": {
+      "total": 5,
+      "passed": 5
+    },
+    "general-qa": {
+      "total": 9,
+      "passed": 9
+    },
+    "coding": {
+      "total": 5,
+      "passed": 5
+    },
+    "math": {
+      "total": 8,
+      "passed": 8
+    },
+    "memory": {
+      "total": 7,
+      "passed": 7
+    },
+    "rag-paraphrase": {
+      "total": 4,
+      "passed": 4
+    },
+    "rag-negative": {
+      "total": 2,
+      "passed": 2
+    },
+    "conversation": {
+      "total": 2,
+      "passed": 2
+    },
+    "hallucination": {
+      "total": 1,
+      "passed": 1
+    },
+    "tool-use": {
+      "total": 2,
+      "passed": 2
+    },
+    "multi-step": {
+      "total": 1,
+      "passed": 1
+    }
+  },
+  "failedCases": [],
+  "results": [
+    {
+      "id": "identity-name",
+      "group": "identity",
+      "passed": true,
+      "latencyMs": 7,
+      "answer": "Mình là Kikial, trợ lý AI local của bạn. Mình hỗ trợ học tập, lập trình, giải thích kiến thức và phát triển ý tưởng.",
+      "error": null
+    },
+    {
+      "id": "identity-who",
+      "group": "identity",
+      "passed": true,
+      "latencyMs": 5,
+      "answer": "Mình là Kikial, trợ lý AI local của bạn. Mình hỗ trợ học tập, lập trình, giải thích kiến thức và phát triển ý tưởng.",
+      "error": null
+    },
+    {
+      "id": "identity-kikial",
+      "group": "identity",
+      "passed": true,
+      "latencyMs": 4,
+      "answer": "Mình là Kikial, trợ lý AI local của bạn. Mình hỗ trợ học tập, lập trình, giải thích kiến thức và phát triển ý tưởng.",
+      "error": null
+    },
+    {
+      "id": "identity-vietnamese",
+      "group": "identity",
+      "passed": true,
+      "latencyMs": 39,
+      "answer": "Có. Kikial mặc định trả lời bằng tiếng Việt và có thể đổi ngôn ngữ khi bạn yêu cầu.",
+      "error": null
+    },
+    {
+      "id": "ai",
+      "group": "vietnamese",
+      "passed": true,
+      "latencyMs": 6,
+      "answer": "AI, hay trí tuệ nhân tạo, là công nghệ giúp máy tính thực hiện các nhiệm vụ và ứng dụng cần khả năng hiểu, học, dự đoán và tạo nội dung.",
+      "error": null
+    },
+    {
+      "id": "ai-paraphrase",
+      "group": "vietnamese",
+      "passed": true,
+      "latencyMs": 40,
+      "answer": "AI, hay trí tuệ nhân tạo, là công nghệ giúp máy tính thực hiện các nhiệm vụ và ứng dụng cần khả năng hiểu, học, dự đoán và tạo nội dung.",
+      "error": null
+    },
+    {
+      "id": "ml",
+      "group": "vietnamese",
+      "passed": true,
+      "latencyMs": 10,
+      "answer": "Chào bạn. Mình là Kikial. Bạn muốn học, viết code hay khám phá một ý tưởng?",
+      "error": null
+    },
+    {
+      "id": "flutter-purpose",
+      "group": "vietnamese",
+      "passed": true,
+      "latencyMs": 14,
+      "answer": "Flutter là framework mã nguồn mở của Google để xây dựng ứng dụng mobile, web và desktop từ một codebase; ngôn ngữ thường dùng là Dart.",
+      "error": null
+    },
+    {
+      "id": "dart",
+      "group": "vietnamese",
+      "passed": true,
+      "latencyMs": 15,
+      "answer": "Dart là ngôn ngữ lập trình được sử dụng phổ biến với Flutter để phát triển ứng dụng mobile, web và desktop.",
+      "error": null
+    },
+    {
+      "id": "async",
+      "group": "general-qa",
+      "passed": true,
+      "latencyMs": 14,
+      "answer": "async đánh dấu hàm bất đồng bộ và thường trả về Promise; await chờ Promise hoàn tất bên trong hàm async, giúp code dễ đọc hơn.",
+      "error": null
+    },
+    {
+      "id": "promise",
+      "group": "general-qa",
+      "passed": true,
+      "latencyMs": 16,
+      "answer": "Promise là đối tượng đại diện cho kết quả của một tác vụ bất đồng bộ. Promise có thể ở trạng thái pending, fulfilled hoặc rejected.",
+      "error": null
+    },
+    {
+      "id": "tcp-udp",
+      "group": "general-qa",
+      "passed": true,
+      "latencyMs": 8,
+      "answer": "TCP có kết nối, kiểm soát thứ tự và độ tin cậy; UDP không thiết lập kết nối, nhẹ và nhanh hơn nhưng không đảm bảo gói tin đến đủ hoặc đúng thứ tự.",
+      "error": null
+    },
+    {
+      "id": "ai-use",
+      "group": "general-qa",
+      "passed": true,
+      "latencyMs": 8,
+      "answer": "AI, hay trí tuệ nhân tạo, là công nghệ giúp máy tính thực hiện các nhiệm vụ và ứng dụng cần khả năng hiểu, học, dự đoán và tạo nội dung.",
+      "error": null
+    },
+    {
+      "id": "node",
+      "group": "general-qa",
+      "passed": true,
+      "latencyMs": 9,
+      "answer": "Node.js là môi trường chạy JavaScript phía máy chủ, thường dùng để xây dựng API và ứng dụng backend.",
+      "error": null
+    },
+    {
+      "id": "http",
+      "group": "general-qa",
+      "passed": true,
+      "latencyMs": 2,
+      "answer": "HTTP 401 cho biết yêu cầu chưa được xác thực hoặc thông tin xác thực không hợp lệ.",
+      "error": null
+    },
+    {
+      "id": "idea-1",
+      "group": "general-qa",
+      "passed": true,
+      "latencyMs": 10,
+      "answer": "Một số ý tưởng dự án: trợ lý học tập RAG, phân loại tài liệu, chatbot hỗ trợ code, hệ thống gợi ý học tập và công cụ tóm tắt tài liệu chạy local.",
+      "error": null
+    },
+    {
+      "id": "idea-2",
+      "group": "general-qa",
+      "passed": true,
+      "latencyMs": 9,
+      "answer": "Một số ý tưởng dự án: trợ lý học tập RAG, phân loại tài liệu, chatbot hỗ trợ code, hệ thống gợi ý học tập và công cụ tóm tắt tài liệu chạy local.",
+      "error": null
+    },
+    {
+      "id": "explain-code",
+      "group": "coding",
+      "passed": true,
+      "latencyMs": 15,
+      "answer": "Bạn có thể bắt đầu bằng ví dụ: function add(a, b) { return a + b; }. Với vòng lặp for, hãy dùng biến khởi tạo, điều kiện và bước cập nhật.",
+      "error": null
+    },
+    {
+      "id": "dart-max",
+      "group": "coding",
+      "passed": true,
+      "latencyMs": 22,
+      "answer": "Có thể đặt max bằng phần tử đầu tiên rồi dùng for-in duyệt List. Nếu phần tử hiện tại lớn hơn max thì cập nhật max.",
+      "error": null
+    },
+    {
+      "id": "js-function",
+      "group": "coding",
+      "passed": true,
+      "latencyMs": 11,
+      "answer": "Bạn có thể bắt đầu bằng ví dụ: function add(a, b) { return a + b; }. Với vòng lặp for, hãy dùng biến khởi tạo, điều kiện và bước cập nhật.",
+      "error": null
+    },
+    {
+      "id": "python-code",
+      "group": "coding",
+      "passed": true,
+      "latencyMs": 10,
+      "answer": "Ví dụ Python đảo chuỗi: text[::-1]. Đây là slicing từ cuối chuỗi về đầu.",
+      "error": null
+    },
+    {
+      "id": "debug",
+      "group": "coding",
+      "passed": true,
+      "latencyMs": 8,
+      "answer": "Khi gặp undefined, hãy kiểm tra tên biến, nơi khởi tạo, dữ liệu đầu vào và dùng console.log để theo dõi giá trị trước khi truy cập thuộc tính.",
+      "error": null
+    },
+    {
+      "id": "math-basic",
+      "group": "math",
+      "passed": true,
+      "latencyMs": 16,
+      "answer": "25 + 10 * 3 = 55",
+      "error": null
+    },
+    {
+      "id": "math-paren",
+      "group": "math",
+      "passed": true,
+      "latencyMs": 3,
+      "answer": "(100 + 50) * 2 = 300",
+      "error": null
+    },
+    {
+      "id": "math-percent",
+      "group": "math",
+      "passed": true,
+      "latencyMs": 3,
+      "answer": "20% của 5.000.000 = 1.000.000",
+      "error": null
+    },
+    {
+      "id": "math-discount",
+      "group": "math",
+      "passed": true,
+      "latencyMs": 4,
+      "answer": "1.250.000 giảm 17% = 1.037.500\nSố tiền giảm: 212.500",
+      "error": null
+    },
+    {
+      "id": "math-power",
+      "group": "math",
+      "passed": true,
+      "latencyMs": 3,
+      "answer": "2^10 = 1.024",
+      "error": null
+    },
+    {
+      "id": "math-root",
+      "group": "math",
+      "passed": true,
+      "latencyMs": 3,
+      "answer": "√144 = 12",
+      "error": null
+    },
+    {
+      "id": "math-more",
+      "group": "math",
+      "passed": true,
+      "latencyMs": 3,
+      "answer": "12 / 3 + 4 = 8",
+      "error": null
+    },
+    {
+      "id": "math-percent-2",
+      "group": "math",
+      "passed": true,
+      "latencyMs": 3,
+      "answer": "15% của 200.000 = 30.000",
+      "error": null
+    },
+    {
+      "id": "memory-name-write",
+      "group": "memory",
+      "passed": true,
+      "latencyMs": 119,
+      "answer": "Đã ghi nhớ thông tin này cho tài khoản của bạn.",
+      "error": null
+    },
+    {
+      "id": "memory-name-read",
+      "group": "memory",
+      "passed": true,
+      "latencyMs": 123,
+      "answer": "Theo thông tin bạn đã chia sẻ: Đức; Đức.",
+      "error": null
+    },
+    {
+      "id": "memory-study-write",
+      "group": "memory",
+      "passed": true,
+      "latencyMs": 509,
+      "answer": "Đã ghi nhớ thông tin này cho tài khoản của bạn.",
+      "error": null
+    },
+    {
+      "id": "memory-study-read",
+      "group": "memory",
+      "passed": true,
+      "latencyMs": 439,
+      "answer": "Theo thông tin bạn đã chia sẻ: Dart.; Dart.; Dart.; học Dart..",
+      "error": null
+    },
+    {
+      "id": "memory-preference-write",
+      "group": "memory",
+      "passed": true,
+      "latencyMs": 153,
+      "answer": "Đã ghi nhớ thông tin này cho tài khoản của bạn.",
+      "error": null
+    },
+    {
+      "id": "memory-preference-read",
+      "group": "memory",
+      "passed": true,
+      "latencyMs": 139,
+      "answer": "Theo thông tin bạn đã chia sẻ: giải thích bằng ví dụ dễ hiểu.; giải thích bằng ví dụ dễ hiểu..",
+      "error": null
+    },
+    {
+      "id": "memory-goal",
+      "group": "memory",
+      "passed": true,
+      "latencyMs": 130,
+      "answer": "Đã ghi nhớ mục tiêu AI local này cho tài khoản của bạn.",
+      "error": null
+    },
+    {
+      "id": "rag-flutter-1",
+      "group": "rag-paraphrase",
+      "passed": true,
+      "latencyMs": 17,
+      "answer": "Flutter là framework mã nguồn mở dùng để phát triển ứng dụng đa nền tảng từ một codebase và sử dụng ngôn ngữ Dart.",
+      "error": null
+    },
+    {
+      "id": "rag-flutter-2",
+      "group": "rag-paraphrase",
+      "passed": true,
+      "latencyMs": 12,
+      "answer": "Flutter là framework mã nguồn mở của Google để xây dựng ứng dụng mobile, web và desktop từ một codebase; ngôn ngữ thường dùng là Dart.",
+      "error": null
+    },
+    {
+      "id": "rag-flutter-3",
+      "group": "rag-paraphrase",
+      "passed": true,
+      "latencyMs": 8,
+      "answer": "Flutter là framework mã nguồn mở của Google để xây dựng ứng dụng mobile, web và desktop từ một codebase; ngôn ngữ thường dùng là Dart.",
+      "error": null
+    },
+    {
+      "id": "rag-dart",
+      "group": "rag-paraphrase",
+      "passed": true,
+      "latencyMs": 8,
+      "answer": "Flutter là framework mã nguồn mở của Google để xây dựng ứng dụng mobile, web và desktop từ một codebase; ngôn ngữ thường dùng là Dart.",
+      "error": null
+    },
+    {
+      "id": "rag-negative",
+      "group": "rag-negative",
+      "passed": true,
+      "latencyMs": 2,
+      "answer": "AI, hay trí tuệ nhân tạo, là công nghệ giúp máy tính thực hiện các nhiệm vụ và ứng dụng cần khả năng hiểu, học, dự đoán và tạo nội dung.",
+      "error": null
+    },
+    {
+      "id": "rag-negative-2",
+      "group": "rag-negative",
+      "passed": true,
+      "latencyMs": 7,
+      "answer": "TCP có kết nối, kiểm soát thứ tự và độ tin cậy; UDP không thiết lập kết nối, nhẹ và nhanh hơn nhưng không đảm bảo gói tin đến đủ hoặc đúng thứ tự.",
+      "error": null
+    },
+    {
+      "id": "conversation",
+      "group": "conversation",
+      "passed": true,
+      "latencyMs": 8,
+      "answer": "Trong ngữ cảnh trước, nội dung đang nói đến Promise/JavaScript và các tác vụ bất đồng bộ; mình có thể viết ví dụ ngắn cho phần đó.",
+      "error": null
+    },
+    {
+      "id": "conversation-code",
+      "group": "conversation",
+      "passed": true,
+      "latencyMs": 7,
+      "answer": "Trong ngữ cảnh trước, nội dung đang nói đến Promise/JavaScript và các tác vụ bất đồng bộ; mình có thể viết ví dụ ngắn cho phần đó.",
+      "error": null
+    },
+    {
+      "id": "hallucination",
+      "group": "hallucination",
+      "passed": true,
+      "latencyMs": 11,
+      "answer": "Mình chưa có đủ thông tin để trả lời chính xác câu hỏi này. Bạn có thể cung cấp thêm ngữ cảnh hoặc tài liệu liên quan.",
+      "error": null
+    },
+    {
+      "id": "tool-calc",
+      "group": "tool-use",
+      "passed": true,
+      "latencyMs": 3,
+      "answer": "7 * 8 = 56",
+      "error": null
+    },
+    {
+      "id": "tool-calc-2",
+      "group": "tool-use",
+      "passed": true,
+      "latencyMs": 2,
+      "answer": "1.000 tăng 10% = 1.100\nSố tăng thêm: 100",
+      "error": null
+    },
+    {
+      "id": "multi-step",
+      "group": "multi-step",
+      "passed": true,
+      "latencyMs": 10,
+      "answer": "Hãy chia mục tiêu thành các bước nhỏ: xác định kiến thức cần học, đặt mục tiêu từng ngày, làm bài tập ngắn, ôn lại và kiểm tra bằng một sản phẩm nhỏ.",
+      "error": null
+    },
+    {
+      "id": "safe-unknown",
+      "group": "general-qa",
+      "passed": true,
+      "latencyMs": 10,
+      "answer": "Mình chưa có đủ thông tin để trả lời chính xác câu hỏi này. Bạn có thể cung cấp thêm ngữ cảnh hoặc tài liệu liên quan.",
+      "error": null
+    }
+  ]
+}

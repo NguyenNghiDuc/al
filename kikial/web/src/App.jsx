@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import "./styles/global.css";
 import "./styles/login.css";
 import "./styles/workspace.css";
+import "./styles/sync.css";
 import ChatPage from "./pages/Chat";
 import Login from "./pages/Login";
 import Register from "./pages/Register";

@@ -1,10 +1,11 @@
 import { handleChat } from '../controllers/chatController.js';
 
-export async function handleChatRoute({ request, response, readJson, send, contentType, answerQuestion }) {
+export async function handleChatRoute({ request, response, readJson, send, contentType, user, traceId }) {
   try {
     const result = await handleChat({
       body: await readJson(request),
-      answerQuestion,
+      user,
+      traceId,
     });
     send(response, 200, JSON.stringify({ ok: true, ...result }), contentType);
   } catch (error) {

@@ -3,412 +3,119 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { calculate } from '../lib/calculator.js';
-import { askAI } from './services/aiService.js';
+import { getModelProvider } from './ai/models/modelRouter.js';
+import { initializeMemoryManager } from './ai/memory/memoryManager.js';
+import { initializeRetriever, vectorCount } from './ai/retrieval/index.js';
+import { graphCount, initializeGraph } from './ai/graph/index.js';
+import { orchestrate } from './ai/orchestrator.js';
+import { addDocument, listDocuments, searchDocuments } from './services/documentService.js';
+import { handleChatRoute } from './routes/chats.js';
 import { getUser, requireAdmin, signToken } from './middleware/auth.js';
-import {
-	findRelevantKnowledge,
-	findUserMemory,
-	getKnowledge,
-	getLearned,
-	initializeMemory,
-	knowledgeCount,
-	learn,
-	learnedCount,
-	markHit,
-	pendingCount,
-	promoteToKnowledge,
-	rememberUser,
-	removeItem,
-	verifyLearned
-} from '../lib/learningMemory.js';
+import { getKnowledge, getLearned, initializeMemory, knowledgeCount, learnedCount, pendingCount, promoteToKnowledge, removeItem, verifyLearned } from '../lib/learningMemory.js';
 
 const port = Number(process.env.PORT) || 4000;
 const webDirectory = join(fileURLToPath(new URL('../../web/', import.meta.url)));
-const userDataDirectory = join(fileURLToPath(new URL('../data/', import.meta.url)));
-const userDataPath = join(userDataDirectory, 'users.json');
-const contentTypes = {
-	'.css': 'text/css; charset=utf-8',
-	'.html': 'text/html; charset=utf-8',
-	'.js': 'text/javascript; charset=utf-8',
-	'.json': 'application/json; charset=utf-8'
-};
+const dataDirectory = join(fileURLToPath(new URL('../data/', import.meta.url)));
+const userDataPath = join(dataDirectory, 'users.json');
+const contentTypes = { '.css': 'text/css; charset=utf-8', '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8' };
 const users = new Map();
+let healthCache = { expires: 0, value: null };
 
-const hashPassword = (password, salt = randomBytes(16).toString('hex')) => {
-	const hash = scryptSync(password, salt, 64).toString('hex');
-	return `${salt}:${hash}`;
-};
-
+const hashPassword = (password, salt = randomBytes(16).toString('hex')) => `${salt}:${scryptSync(password, salt, 64).toString('hex')}`;
 const verifyPassword = (password, storedHash) => {
-	const [salt, expectedHash] = String(storedHash || '').split(':');
-	if (!salt || !expectedHash) return false;
-	const actualHash = scryptSync(password, salt, 64);
-	const expectedBuffer = Buffer.from(expectedHash, 'hex');
-	return actualHash.length === expectedBuffer.length && timingSafeEqual(actualHash, expectedBuffer);
+  const [salt, expectedHash] = String(storedHash || '').split(':');
+  if (!salt || !expectedHash) return false;
+  const actual = scryptSync(password, salt, 64); const expected = Buffer.from(expectedHash, 'hex');
+  return actual.length === expected.length && timingSafeEqual(actual, expected);
 };
+const saveUsers = async () => { await mkdir(dataDirectory, { recursive: true }); await writeFile(userDataPath, JSON.stringify(Object.fromEntries(users), null, 2)); };
+async function loadUsers() {
+  try { Object.entries(JSON.parse(await readFile(userDataPath, 'utf8'))).forEach(([email, user]) => users.set(email.toLowerCase(), user)); }
+  catch { users.set('demo@kikial.local', { name: 'Nguyễn Nghị Đức', password: hashPassword('123456'), role: 'user' }); }
+  const admin = users.get('admin@kikial.local');
+  if (!admin) users.set('admin@kikial.local', { name: 'Admin Kikial', password: hashPassword('admin123'), role: 'admin' });
+  else if (admin.role !== 'admin') users.set('admin@kikial.local', { ...admin, role: 'admin' });
+  await saveUsers();
+}
+const send = (response, status, body, contentType = 'text/plain; charset=utf-8') => { response.writeHead(status, { 'Content-Type': contentType }); response.end(body); };
+const sendJson = (response, status, payload) => send(response, status, JSON.stringify(payload), contentTypes['.json']);
+async function readJson(request) {
+  let body = '';
+  for await (const chunk of request) { body += chunk; if (body.length > (Number(process.env.MAX_PAYLOAD_BYTES) || 1_000_000)) { const error = new Error('Payload quá lớn.'); error.statusCode = 413; error.code = 'VALIDATION_ERROR'; throw error; } }
+  try { return JSON.parse(body || '{}'); } catch { const error = new Error('JSON không hợp lệ.'); error.statusCode = 400; error.code = 'VALIDATION_ERROR'; throw error; }
+}
+const newTraceId = () => randomBytes(12).toString('hex');
+const requireAuth = (request, response) => { const user = getUser(request); if (!user) sendJson(response, 401, { ok: false, message: 'Bạn cần đăng nhập.', code: 'AUTH_ERROR' }); return user; };
 
-const saveUsers = async () => {
-	await mkdir(userDataDirectory, { recursive: true });
-	await writeFile(userDataPath, JSON.stringify(Object.fromEntries(users), null, 2));
-};
+async function health() {
+  if (healthCache.expires > Date.now()) return healthCache.value;
+  const model = getModelProvider(); const provider = await model.health();
+  let vectorItems = 0; let vectorOnline = true;
+  try { vectorItems = await vectorCount(); } catch { vectorOnline = false; }
+  const degraded = [];
+  if (!provider.online) degraded.push('MODEL_OFFLINE', 'EMBEDDING_OFFLINE');
+  if (!vectorOnline) degraded.push('VECTOR_INDEX_UNAVAILABLE');
+  const value = { ok: true, service: 'kikial-backend', aiProvider: 'ollama', model: provider.model || model.model, modelOnline: Boolean(provider.online), embeddingModel: provider.embeddingModel || model.embeddingModel, embeddingOnline: Boolean(provider.online), vectorOnline, degraded, knowledgeItems: knowledgeCount(), learnedItems: learnedCount(), pendingItems: pendingCount(), vectorItems, graphItems: graphCount() };
+  healthCache = { expires: Date.now() + 10000, value }; return value;
+}
 
-const loadUsers = async () => {
-	try {
-		const storedUsers = JSON.parse(await readFile(userDataPath, 'utf8'));
-		Object.entries(storedUsers).forEach(([email, user]) => users.set(email.toLowerCase(), user));
-	} catch {
-		users.set('demo@kikial.local', { name: 'Nguyễn Nghị Đức', password: hashPassword('123456'), role: 'user' });
-	}
-
-	const admin = users.get('admin@kikial.local');
-
-	if (!admin) {
-		users.set('admin@kikial.local', {
-			name: 'Admin Kikial',
-			password: hashPassword('admin123'),
-			role: 'admin'
-		});
-	} else if (admin.role !== 'admin') {
-		users.set('admin@kikial.local', { ...admin, role: 'admin' });
-	}
-
-	await saveUsers();
-};
-
-const send = (response, status, body, contentType = 'text/plain; charset=utf-8') => {
-	response.writeHead(status, { 'Content-Type': contentType });
-	response.end(body);
-};
-
-const sendJson = (response, status, payload) =>
-	send(response, status, JSON.stringify(payload), contentTypes['.json']);
-
-const readJson = async (request) => {
-	let body = '';
-	for await (const chunk of request) {
-		body += chunk;
-		// Chặn body quá lớn
-		if (body.length > 1_000_000) throw new Error('payload-too-large');
-	}
-	return JSON.parse(body || '{}');
-};
-
-// ======================================================
-// FALLBACK
-// Trả về { answer, source } để biết câu nào KHÔNG được học.
-// ======================================================
-
-const answerQuestion = (question, relevantKnowledge = []) => {
-	const best = relevantKnowledge[0];
-
-	// Ngưỡng đã chuẩn hoá (0..1) trong learningMemory
-	if (best && best.score >= 0.45) {
-		markHit(best.id);
-		return { answer: best.answer, source: 'knowledge' };
-	}
-
-	const normalizedQuestion = question.toLowerCase();
-	const canned = (answer) => ({ answer, source: 'canned' });
-
-	if (normalizedQuestion.includes('async') || normalizedQuestion.includes('await')) {
-		return canned('async/await giúp viết code bất đồng bộ theo cách dễ đọc hơn. Hàm có async luôn trả về Promise, còn await tạm dừng trong hàm async cho đến khi Promise hoàn tất. Ví dụ: async function loadData() { const response = await fetch("/api/data"); return response.json(); }');
-	}
-	if (normalizedQuestion.includes('tiếng anh') || normalizedQuestion.includes('tieng anh')) {
-		return canned('Bạn có thể bắt đầu với 30 phút mỗi ngày: 10 phút học từ mới, 10 phút nghe một đoạn ngắn và 10 phút viết hoặc nói lại bằng từ của mình. Hãy duy trì một chủ đề nhỏ mỗi tuần để thấy tiến bộ rõ hơn.');
-	}
-	if (normalizedQuestion.includes('ý tưởng') || normalizedQuestion.includes('ung dung') || normalizedQuestion.includes('ứng dụng')) {
-		return canned('Một ý tưởng phù hợp để bắt đầu là trợ lý học tập cá nhân: người dùng tải tài liệu lên, đặt câu hỏi và nhận câu trả lời kèm trích dẫn. Hãy làm bản đầu tiên thật nhỏ với đăng nhập, tải tài liệu và chat.');
-	}
-	if (normalizedQuestion.includes('xin chào') || normalizedQuestion.includes('hello') || normalizedQuestion.includes('chào')) {
-		return canned('Chào bạn. Mình là Kikial. Bạn muốn cùng học, viết code hay phát triển một ý tưởng hôm nay?');
-	}
-	if (normalizedQuestion.includes('tên gì') || normalizedQuestion.includes('tên là gì') || normalizedQuestion.includes('name')) {
-		return canned('Mình là Kikial, trợ lý AI local của bạn.');
-	}
-	if (normalizedQuestion === 'helo' || normalizedQuestion === 'hi' || normalizedQuestion === 'hey') {
-		return canned('Chào bạn. Mình là Kikial. Bạn muốn hỏi về code, học tập hay một ý tưởng mới?');
-	}
-	if (normalizedQuestion.includes('code') || normalizedQuestion.includes('lập trình') || normalizedQuestion.includes('javascript')) {
-		return canned('Mình có thể giúp bạn viết, giải thích và sửa code. Hãy gửi đoạn code hoặc mô tả mục tiêu, lỗi đang gặp và kết quả bạn mong muốn để mình phân tích từng bước.');
-	}
-
-	return canned(`Mình chưa có đủ dữ liệu chắc chắn để trả lời câu hỏi “${question}”. Bạn có thể cung cấp thêm ngữ cảnh hoặc tài liệu để mình học câu trả lời chính xác hơn.`);
-};
+async function handleRequest(request, response) {
+  const requestPath = request.url?.split('?')[0] || '/'; const traceId = newTraceId(); const started = performance.now();
+  try {
+    if (requestPath === '/api/health') { sendJson(response, 200, await health()); return; }
+    if (request.method === 'POST' && requestPath === '/api/auth/login') {
+      const body = await readJson(request); const email = String(body.email || '').trim().toLowerCase(); const user = users.get(email);
+      if (!user || !verifyPassword(String(body.password || ''), user.password)) { sendJson(response, 401, { ok: false, message: 'Email hoặc mật khẩu không đúng.', code: 'AUTH_ERROR' }); return; }
+      const role = user.role || 'user'; sendJson(response, 200, { ok: true, token: signToken({ email, role, name: user.name }), user: { name: user.name, email, role } }); return;
+    }
+    if (request.method === 'POST' && requestPath === '/api/auth/register') {
+      const body = await readJson(request); const email = String(body.email || '').trim().toLowerCase(); const name = String(body.name || '').trim(); const password = String(body.password || '');
+      if (!name || !email.includes('@') || password.length < 6) { sendJson(response, 400, { ok: false, message: 'Vui lòng nhập đủ thông tin và mật khẩu từ 6 ký tự.', code: 'VALIDATION_ERROR' }); return; }
+      if (users.has(email)) { sendJson(response, 409, { ok: false, message: 'Email này đã được đăng ký.' }); return; }
+      users.set(email, { name, password: hashPassword(password), role: 'user' }); await saveUsers(); sendJson(response, 201, { ok: true, token: signToken({ email, role: 'user', name }), user: { name, email, role: 'user' } }); return;
+    }
+    if (request.method === 'GET' && requestPath === '/api/auth/me') { const user = requireAuth(request, response); if (user) sendJson(response, 200, { ok: true, user: { email: user.email, name: user.name, role: user.role } }); return; }
+    if (requestPath === '/api/documents') {
+      const user = requireAuth(request, response); if (!user) return;
+      if (request.method === 'GET') { sendJson(response, 200, { ok: true, documents: await listDocuments(user.email) }); return; }
+      if (request.method === 'POST') { const body = await readJson(request); const document = await addDocument(user.email, body.filename, body.text); sendJson(response, 201, { ok: true, document: { documentId: document.documentId, filename: document.filename, chunks: document.chunks.length } }); return; }
+    }
+    if (request.method === 'POST' && requestPath === '/api/documents/search') { const user = requireAuth(request, response); if (user) { const body = await readJson(request); sendJson(response, 200, { ok: true, chunks: await searchDocuments(user.email, body.query, 5) }); } return; }
+    if (request.method === 'POST' && requestPath === '/api/chat/stream') {
+      const user = requireAuth(request, response); if (!user) return;
+      const body = await readJson(request); const result = await orchestrate({ userId: user.email, message: body.message, history: body.history, traceId });
+      response.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
+      response.write(`event: status\ndata: ${JSON.stringify({ status: 'complete', traceId })}\n\n`);
+      response.write(`event: answer_delta\ndata: ${JSON.stringify({ text: result.answer })}\n\n`);
+      response.write(`event: complete\ndata: ${JSON.stringify(result)}\n\n`); response.end(); return;
+    }
+    if (request.method === 'POST' && requestPath === '/api/chat') { const user = requireAuth(request, response); if (user) await handleChatRoute({ request, response, readJson, send, contentType: contentTypes['.json'], user, traceId }); return; }
+    if (request.method === 'POST' && requestPath === '/api/chat/feedback') {
+      const user = requireAuth(request, response); if (!user) return; const body = await readJson(request);
+      if (!body.id) { sendJson(response, 400, { ok: false, message: 'Thiếu mã bản ghi.' }); return; }
+      if (body.helpful === false) { const removed = await removeItem(body.id); sendJson(response, 200, { ok: true, removed: Boolean(removed) }); return; }
+      const verified = await verifyLearned(body.id, true); sendJson(response, verified ? 200 : 404, { ok: verified, message: verified ? 'Đã duyệt kiến thức.' : 'Không tìm thấy bản ghi.' }); return;
+    }
+    if (requestPath.startsWith('/api/admin/')) {
+      if (!requireAdmin(request)) { sendJson(response, 403, { ok: false, message: 'Bạn không có quyền truy cập.', code: 'AUTH_ERROR' }); return; }
+      if (request.method === 'GET' && requestPath === '/api/admin/knowledge') { sendJson(response, 200, { ok: true, items: [...getLearned(), ...getKnowledge()], counts: { knowledge: knowledgeCount(), learned: learnedCount(), pending: pendingCount() } }); return; }
+      if (request.method === 'POST' && requestPath === '/api/admin/knowledge/verify') { const body = await readJson(request); const ok = body.promote ? await promoteToKnowledge(body.id) : await verifyLearned(body.id, body.verified !== false); sendJson(response, ok ? 200 : 404, { ok, message: ok ? 'Đã cập nhật.' : 'Không tìm thấy bản ghi.' }); return; }
+      if (request.method === 'DELETE' && requestPath.startsWith('/api/admin/knowledge/')) { const id = decodeURIComponent(requestPath.split('/').pop() || ''); const store = await removeItem(id); sendJson(response, store ? 200 : 404, { ok: Boolean(store), store }); return; }
+      sendJson(response, 404, { ok: false, message: 'Không tìm thấy endpoint.' }); return;
+    }
+    if (requestPath === '/' || requestPath === '/index.html') { response.writeHead(302, { Location: 'http://localhost:5173/' }); response.end(); return; }
+    const pageRoutes = { '/login.html': '/pages/login.html', '/register.html': '/pages/register.html' }; const relativePath = pageRoutes[requestPath] || requestPath; const filePath = normalize(join(webDirectory, relativePath));
+    if (!filePath.startsWith(webDirectory)) { send(response, 403, 'Forbidden'); return; }
+    try { send(response, 200, await readFile(filePath), contentTypes[extname(filePath)] || 'application/octet-stream'); } catch { send(response, 404, 'Not found'); }
+  } catch (error) {
+    console.error(JSON.stringify({ traceId, code: error.code || 'INTERNAL_ERROR', message: error.message, latencyMs: Math.round(performance.now() - started) }));
+    sendJson(response, error.statusCode || 500, { ok: false, message: error.statusCode && error.statusCode < 500 ? error.message : 'Không thể xử lý yêu cầu.', code: error.code || 'INTERNAL_ERROR', traceId });
+  }
+}
 
 await loadUsers();
 await initializeMemory();
-
-const server = createServer(async (request, response) => {
-	const requestPath = request.url?.split('?')[0] || '/';
-
-	if (requestPath === '/api/health') {
-		sendJson(response, 200, {
-			ok: true,
-			service: 'kikial-backend',
-			knowledgeItems: knowledgeCount(),
-			learnedItems: learnedCount(),
-			pendingItems: pendingCount()
-		});
-		return;
-	}
-
-	// ==================================================
-	// AUTH
-	// ==================================================
-
-	if (request.method === 'POST' && requestPath === '/api/auth/login') {
-		try {
-			const { email, password } = await readJson(request);
-			const emailKey = String(email || '').trim().toLowerCase();
-			const user = users.get(emailKey);
-
-			if (!user || !verifyPassword(String(password || ''), user.password)) {
-				sendJson(response, 401, { ok: false, message: 'Email hoặc mật khẩu không đúng.' });
-				return;
-			}
-
-			const role = user.role || 'user';
-
-			sendJson(response, 200, {
-				ok: true,
-				token: signToken({ email: emailKey, role, name: user.name }),
-				user: { name: user.name, email: emailKey, role }
-			});
-		} catch {
-			sendJson(response, 400, { ok: false, message: 'Dữ liệu đăng nhập không hợp lệ.' });
-		}
-		return;
-	}
-
-	if (request.method === 'POST' && requestPath === '/api/auth/register') {
-		try {
-			const { name, email, password } = await readJson(request);
-			const normalizedEmail = String(email || '').trim().toLowerCase();
-			const normalizedName = String(name || '').trim();
-
-			if (!normalizedName || !normalizedEmail.includes('@') || String(password || '').length < 6) {
-				sendJson(response, 400, { ok: false, message: 'Vui lòng nhập đủ thông tin và mật khẩu từ 6 ký tự.' });
-				return;
-			}
-			if (users.has(normalizedEmail)) {
-				sendJson(response, 409, { ok: false, message: 'Email này đã được đăng ký.' });
-				return;
-			}
-
-			// role bị thiếu ở bản cũ -> user.role là undefined
-			users.set(normalizedEmail, { name: normalizedName, password: hashPassword(password), role: 'user' });
-			await saveUsers();
-
-			sendJson(response, 201, {
-				ok: true,
-				token: signToken({ email: normalizedEmail, role: 'user', name: normalizedName }),
-				user: { name: normalizedName, email: normalizedEmail, role: 'user' }
-			});
-		} catch {
-			sendJson(response, 400, { ok: false, message: 'Dữ liệu đăng ký không hợp lệ.' });
-		}
-		return;
-	}
-
-	// ==================================================
-	// CHAT
-	// ==================================================
-
-	if (request.method === 'POST' && requestPath === '/api/chat') {
-		try {
-			const { message, history = [] } = await readJson(request);
-			const question = String(message || '').trim();
-
-			// Email lấy từ token, KHÔNG lấy từ body (tránh đọc memory người khác)
-			const account = getUser(request);
-			const emailKey = account?.email || '';
-
-			if (!question) {
-				sendJson(response, 400, { ok: false, message: 'Vui lòng nhập câu hỏi.' });
-				return;
-			}
-
-			const calculation = calculate(question);
-			const safeHistory = Array.isArray(history)
-				? history.filter((item) => ['user', 'assistant'].includes(item?.role) && typeof item?.content === 'string').slice(-12)
-				: [];
-			const relevantKnowledge = calculation ? [] : findRelevantKnowledge(question);
-			const personalMemory = findUserMemory(emailKey);
-
-			let answer;
-			let source;
-			let learnedId = null;
-
-			if (calculation) {
-				answer = calculation.answer;
-				source = 'calc';
-			} else {
-				try {
-					answer = await askAI(
-						question,
-						safeHistory,
-						relevantKnowledge,
-						() => {
-							// Chưa cấu hình AI -> ném để rơi xuống fallback bên dưới
-							throw new Error('ai-not-configured');
-						},
-						personalMemory
-					);
-					source = 'ai';
-				} catch (error) {
-					// Bản cũ: askAI lỗi -> cả request trả 400.
-					console.warn('[Kikial] AI lỗi, dùng fallback:', error.message);
-					const fallback = answerQuestion(question, relevantKnowledge);
-					answer = fallback.answer;
-					source = fallback.source;
-				}
-			}
-
-			// CHỈ học câu do AI thật sinh ra, và phải chờ duyệt.
-			if (source === 'ai') {
-				const result = await learn(question, answer);
-				learnedId = result.id || null;
-			}
-
-			const nameMatch = question.match(/(?:tôi tên là|tên tôi là|mình tên là|t tên là|tên mình là)\s+([^,.!?\n]+)/i);
-			if (emailKey && nameMatch?.[1]) {
-				await rememberUser(emailKey, `Tên người dùng là ${nameMatch[1].trim()}.`);
-			}
-
-			sendJson(response, 200, { ok: true, answer, source, learnedId });
-		} catch (error) {
-			console.error('[Kikial] /api/chat lỗi:', error.message);
-			sendJson(response, 400, { ok: false, message: 'Không thể xử lý câu hỏi.' });
-		}
-		return;
-	}
-
-	// ==================================================
-	// FEEDBACK — nút 👍 duyệt câu trả lời thành kiến thức
-	// ==================================================
-
-	if (request.method === 'POST' && requestPath === '/api/chat/feedback') {
-		try {
-			const { id, helpful } = await readJson(request);
-
-			if (!id) {
-				sendJson(response, 400, { ok: false, message: 'Thiếu mã bản ghi.' });
-				return;
-			}
-
-			if (helpful === false) {
-				const removed = await removeItem(id);
-				sendJson(response, 200, { ok: true, removed: Boolean(removed) });
-				return;
-			}
-
-			const verified = await verifyLearned(id, true);
-			sendJson(response, verified ? 200 : 404, {
-				ok: verified,
-				message: verified ? 'Đã duyệt kiến thức.' : 'Không tìm thấy bản ghi.'
-			});
-		} catch {
-			sendJson(response, 400, { ok: false, message: 'Dữ liệu phản hồi không hợp lệ.' });
-		}
-		return;
-	}
-
-	// ==================================================
-	// ADMIN (yêu cầu role admin)
-	// ==================================================
-
-	if (requestPath.startsWith('/api/admin/')) {
-		if (!requireAdmin(request)) {
-			sendJson(response, 403, { ok: false, message: 'Bạn không có quyền truy cập.' });
-			return;
-		}
-
-		if (request.method === 'GET' && requestPath === '/api/admin/knowledge') {
-			// Trả cả 2 kho: seed + tự học (bản cũ chỉ trả knowledge.json)
-			sendJson(response, 200, {
-				ok: true,
-				items: [...getLearned(), ...getKnowledge()],
-				counts: {
-					knowledge: knowledgeCount(),
-					learned: learnedCount(),
-					pending: pendingCount()
-				}
-			});
-			return;
-		}
-
-		if (request.method === 'POST' && requestPath === '/api/admin/knowledge/verify') {
-			try {
-				const { id, verified = true, promote = false } = await readJson(request);
-				const ok = promote ? await promoteToKnowledge(id) : await verifyLearned(id, verified);
-				sendJson(response, ok ? 200 : 404, {
-					ok,
-					message: ok ? 'Đã cập nhật.' : 'Không tìm thấy bản ghi.'
-				});
-			} catch {
-				sendJson(response, 400, { ok: false, message: 'Dữ liệu không hợp lệ.' });
-			}
-			return;
-		}
-
-		if (request.method === 'DELETE' && requestPath.startsWith('/api/admin/knowledge/')) {
-			try {
-				const id = decodeURIComponent(requestPath.split('/').pop() || '');
-
-				if (!id) {
-					sendJson(response, 400, { ok: false, message: 'Thiếu mã bản ghi cần xóa.' });
-					return;
-				}
-
-				const store = await removeItem(id);
-
-				if (!store) {
-					sendJson(response, 404, { ok: false, message: 'Không tìm thấy bản ghi.' });
-					return;
-				}
-
-				sendJson(response, 200, { ok: true, store, message: 'Đã xoá ghi nhớ.' });
-			} catch {
-				sendJson(response, 500, { ok: false, message: 'Không xoá được bản ghi.' });
-			}
-			return;
-		}
-
-		sendJson(response, 404, { ok: false, message: 'Không tìm thấy endpoint.' });
-		return;
-	}
-
-	// ==================================================
-	// STATIC
-	// ==================================================
-
-	if (requestPath === '/' || requestPath === '/index.html') {
-		response.writeHead(302, { Location: 'http://localhost:5173/' });
-		response.end();
-		return;
-	}
-
-	const pageRoutes = {
-		'/login.html': '/pages/login.html',
-		'/register.html': '/pages/register.html'
-	};
-	const relativePath = pageRoutes[requestPath] || requestPath;
-	const filePath = normalize(join(webDirectory, relativePath));
-
-	if (!filePath.startsWith(webDirectory)) {
-		send(response, 403, 'Forbidden');
-		return;
-	}
-
-	try {
-		const content = await readFile(filePath);
-		send(response, 200, content, contentTypes[extname(filePath)] || 'application/octet-stream');
-	} catch {
-		send(response, 404, 'Not found');
-	}
-});
-
-server.listen(port, () => {
-	console.log(`Kikial đang chạy tại http://localhost:${port}`);
-});
+await initializeMemoryManager();
+await initializeRetriever();
+await initializeGraph([...getKnowledge(), ...getLearned().filter((item) => item.verified)]);
+createServer(handleRequest).listen(port, () => console.log(`Kikial đang chạy tại http://localhost:${port}`));

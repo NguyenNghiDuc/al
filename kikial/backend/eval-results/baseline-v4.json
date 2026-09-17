@@ -1,0 +1,9 @@
+{
+  "source": "evals/reports/after-v3.json",
+  "datasetVersion": "v3-final-100",
+  "overall": { "total": 100, "passed": 100, "failed": 0, "passRate": 1 },
+  "categories": { "retrieval": 1, "memory": 1, "math": 1, "toolUse": 1, "hallucination": 1, "security": 1, "coding": 1, "followUp": 1 },
+  "averageLatencyMs": 8.87,
+  "modelOnline": false,
+  "trainingExecuted": false
+}

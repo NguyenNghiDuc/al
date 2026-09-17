@@ -1,0 +1,898 @@
+{
+  "label": "v2-final-100",
+  "baseUrl": "http://127.0.0.1:4401",
+  "total": 100,
+  "passed": 100,
+  "failed": 0,
+  "passRate": 1,
+  "retrievalHitRate": 1,
+  "memoryAccuracy": 1,
+  "mathAccuracy": 1,
+  "toolSuccessRate": 1,
+  "averageLatency": 6.94,
+  "groups": {
+    "identity": {
+      "total": 5,
+      "passed": 5
+    },
+    "vietnamese": {
+      "total": 5,
+      "passed": 5
+    },
+    "general-qa": {
+      "total": 12,
+      "passed": 12
+    },
+    "coding": {
+      "total": 10,
+      "passed": 10
+    },
+    "math": {
+      "total": 13,
+      "passed": 13
+    },
+    "memory": {
+      "total": 12,
+      "passed": 12
+    },
+    "rag-paraphrase": {
+      "total": 9,
+      "passed": 9
+    },
+    "rag-negative": {
+      "total": 2,
+      "passed": 2
+    },
+    "conversation": {
+      "total": 2,
+      "passed": 2
+    },
+    "hallucination": {
+      "total": 3,
+      "passed": 3
+    },
+    "tool-use": {
+      "total": 4,
+      "passed": 4
+    },
+    "multi-step": {
+      "total": 3,
+      "passed": 3
+    },
+    "no-diacritic": {
+      "total": 7,
+      "passed": 7
+    },
+    "slang": {
+      "total": 2,
+      "passed": 2
+    },
+    "follow-up": {
+      "total": 4,
+      "passed": 4
+    },
+    "temporal-memory": {
+      "total": 3,
+      "passed": 3
+    },
+    "document": {
+      "total": 1,
+      "passed": 1
+    },
+    "research": {
+      "total": 1,
+      "passed": 1
+    },
+    "security": {
+      "total": 1,
+      "passed": 1
+    },
+    "graph-retrieval": {
+      "total": 1,
+      "passed": 1
+    }
+  },
+  "failedCases": [],
+  "results": [
+    {
+      "id": "identity-name",
+      "group": "identity",
+      "passed": true,
+      "latencyMs": 8,
+      "answer": "Mình là Kikial, trợ lý AI local của bạn. Mình hỗ trợ học tập, lập trình, giải thích kiến thức và phát triển ý tưởng.",
+      "error": null
+    },
+    {
+      "id": "identity-who",
+      "group": "identity",
+      "passed": true,
+      "latencyMs": 5,
+      "answer": "Mình là Kikial, trợ lý AI local của bạn. Mình hỗ trợ học tập, lập trình, giải thích kiến thức và phát triển ý tưởng.",
+      "error": null
+    },
+    {
+      "id": "identity-kikial",
+      "group": "identity",
+      "passed": true,
+      "latencyMs": 4,
+      "answer": "Mình là Kikial, trợ lý AI local của bạn. Mình hỗ trợ học tập, lập trình, giải thích kiến thức và phát triển ý tưởng.",
+      "error": null
+    },
+    {
+      "id": "identity-vietnamese",
+      "group": "identity",
+      "passed": true,
+      "latencyMs": 29,
+      "answer": "Có. Kikial mặc định trả lời bằng tiếng Việt và có thể đổi ngôn ngữ khi bạn yêu cầu.",
+      "error": null
+    },
+    {
+      "id": "ai",
+      "group": "vietnamese",
+      "passed": true,
+      "latencyMs": 6,
+      "answer": "AI, hay trí tuệ nhân tạo, là công nghệ giúp máy tính thực hiện các nhiệm vụ và ứng dụng cần khả năng hiểu, học, dự đoán và tạo nội dung.",
+      "error": null
+    },
+    {
+      "id": "ai-paraphrase",
+      "group": "vietnamese",
+      "passed": true,
+      "latencyMs": 16,
+      "answer": "AI, hay trí tuệ nhân tạo, là công nghệ giúp máy tính thực hiện các nhiệm vụ và ứng dụng cần khả năng hiểu, học, dự đoán và tạo nội dung.",
+      "error": null
+    },
+    {
+      "id": "ml",
+      "group": "vietnamese",
+      "passed": true,
+      "latencyMs": 12,
+      "answer": "Chào bạn. Mình là Kikial. Bạn muốn học, viết code hay khám phá một ý tưởng?",
+      "error": null
+    },
+    {
+      "id": "flutter-purpose",
+      "group": "vietnamese",
+      "passed": true,
+      "latencyMs": 13,
+      "answer": "Flutter là framework mã nguồn mở dùng để phát triển ứng dụng đa nền tảng từ một codebase và sử dụng ngôn ngữ Dart.",
+      "error": null
+    },
+    {
+      "id": "dart",
+      "group": "vietnamese",
+      "passed": true,
+      "latencyMs": 12,
+      "answer": "Dart là ngôn ngữ lập trình được sử dụng phổ biến với Flutter để phát triển ứng dụng mobile, web và desktop.",
+      "error": null
+    },
+    {
+      "id": "async",
+      "group": "general-qa",
+      "passed": true,
+      "latencyMs": 10,
+      "answer": "async đánh dấu hàm bất đồng bộ và thường trả về Promise; await chờ Promise hoàn tất bên trong hàm async, giúp code dễ đọc hơn.",
+      "error": null
+    },
+    {
+      "id": "promise",
+      "group": "general-qa",
+      "passed": true,
+      "latencyMs": 8,
+      "answer": "Promise đại diện cho kết quả của một tác vụ bất đồng bộ, có thể ở trạng thái pending, fulfilled hoặc rejected.",
+      "error": null
+    },
+    {
+      "id": "tcp-udp",
+      "group": "general-qa",
+      "passed": true,
+      "latencyMs": 11,
+      "answer": "TCP có kết nối, kiểm soát thứ tự và độ tin cậy; UDP không thiết lập kết nối, nhẹ và nhanh hơn nhưng không đảm bảo gói tin đến đủ hoặc đúng thứ tự.",
+      "error": null
+    },
+    {
+      "id": "ai-use",
+      "group": "general-qa",
+      "passed": true,
+      "latencyMs": 14,
+      "answer": "AI, hay trí tuệ nhân tạo, là công nghệ giúp máy tính thực hiện các nhiệm vụ và ứng dụng cần khả năng hiểu, học, dự đoán và tạo nội dung.",
+      "error": null
+    },
+    {
+      "id": "node",
+      "group": "general-qa",
+      "passed": true,
+      "latencyMs": 2,
+      "answer": "Node.js là môi trường chạy JavaScript phía máy chủ, thường dùng để xây dựng API và ứng dụng backend.",
+      "error": null
+    },
+    {
+      "id": "http",
+      "group": "general-qa",
+      "passed": true,
+      "latencyMs": 3,
+      "answer": "HTTP 401 cho biết yêu cầu chưa được xác thực hoặc thông tin xác thực không hợp lệ.",
+      "error": null
+    },
+    {
+      "id": "idea-1",
+      "group": "general-qa",
+      "passed": true,
+      "latencyMs": 13,
+      "answer": "Một số ý tưởng dự án: trợ lý học tập RAG, phân loại tài liệu, chatbot hỗ trợ code, hệ thống gợi ý học tập và công cụ tóm tắt tài liệu chạy local.",
+      "error": null
+    },
+    {
+      "id": "idea-2",
+      "group": "general-qa",
+      "passed": true,
+      "latencyMs": 8,
+      "answer": "Một số ý tưởng dự án: trợ lý học tập RAG, phân loại tài liệu, chatbot hỗ trợ code, hệ thống gợi ý học tập và công cụ tóm tắt tài liệu chạy local.",
+      "error": null
+    },
+    {
+      "id": "explain-code",
+      "group": "coding",
+      "passed": true,
+      "latencyMs": 8,
+      "answer": "Bạn có thể bắt đầu bằng ví dụ: function add(a, b) { return a + b; }. Với vòng lặp for, hãy dùng biến khởi tạo, điều kiện và bước cập nhật.",
+      "error": null
+    },
+    {
+      "id": "dart-max",
+      "group": "coding",
+      "passed": true,
+      "latencyMs": 7,
+      "answer": "Có thể đặt max bằng phần tử đầu tiên rồi dùng for-in duyệt List. Nếu phần tử hiện tại lớn hơn max thì cập nhật max.",
+      "error": null
+    },
+    {
+      "id": "js-function",
+      "group": "coding",
+      "passed": true,
+      "latencyMs": 8,
+      "answer": "Bạn có thể bắt đầu bằng ví dụ: function add(a, b) { return a + b; }. Với vòng lặp for, hãy dùng biến khởi tạo, điều kiện và bước cập nhật.",
+      "error": null
+    },
+    {
+      "id": "python-code",
+      "group": "coding",
+      "passed": true,
+      "latencyMs": 7,
+      "answer": "Ví dụ Python đảo chuỗi: text[::-1]. Đây là slicing từ cuối chuỗi về đầu.",
+      "error": null
+    },
+    {
+      "id": "debug",
+      "group": "coding",
+      "passed": true,
+      "latencyMs": 8,
+      "answer": "Khi gặp undefined, hãy kiểm tra tên biến, nơi khởi tạo, dữ liệu đầu vào và dùng console.log để theo dõi giá trị trước khi truy cập thuộc tính.",
+      "error": null
+    },
+    {
+      "id": "math-basic",
+      "group": "math",
+      "passed": true,
+      "latencyMs": 19,
+      "answer": "25 + 10 * 3 = 55",
+      "error": null
+    },
+    {
+      "id": "math-paren",
+      "group": "math",
+      "passed": true,
+      "latencyMs": 4,
+      "answer": "(100 + 50) * 2 = 300",
+      "error": null
+    },
+    {
+      "id": "math-percent",
+      "group": "math",
+      "passed": true,
+      "latencyMs": 3,
+      "answer": "20% của 5.000.000 = 1.000.000",
+      "error": null
+    },
+    {
+      "id": "math-discount",
+      "group": "math",
+      "passed": true,
+      "latencyMs": 3,
+      "answer": "1.250.000 giảm 17% = 1.037.500\nSố tiền giảm: 212.500",
+      "error": null
+    },
+    {
+      "id": "math-power",
+      "group": "math",
+      "passed": true,
+      "latencyMs": 3,
+      "answer": "2^10 = 1.024",
+      "error": null
+    },
+    {
+      "id": "math-root",
+      "group": "math",
+      "passed": true,
+      "latencyMs": 3,
+      "answer": "√144 = 12",
+      "error": null
+    },
+    {
+      "id": "math-more",
+      "group": "math",
+      "passed": true,
+      "latencyMs": 3,
+      "answer": "12 / 3 + 4 = 8",
+      "error": null
+    },
+    {
+      "id": "math-percent-2",
+      "group": "math",
+      "passed": true,
+      "latencyMs": 2,
+      "answer": "15% của 200.000 = 30.000",
+      "error": null
+    },
+    {
+      "id": "memory-name-write",
+      "group": "memory",
+      "passed": true,
+      "latencyMs": 5,
+      "answer": "Đã ghi nhớ thông tin này cho tài khoản của bạn.",
+      "error": null
+    },
+    {
+      "id": "memory-name-read",
+      "group": "memory",
+      "passed": true,
+      "latencyMs": 3,
+      "answer": "Theo thông tin bạn đã chia sẻ: Đức; Đức.",
+      "error": null
+    },
+    {
+      "id": "memory-study-write",
+      "group": "memory",
+      "passed": true,
+      "latencyMs": 5,
+      "answer": "Đã ghi nhớ thông tin này cho tài khoản của bạn.",
+      "error": null
+    },
+    {
+      "id": "memory-study-read",
+      "group": "memory",
+      "passed": true,
+      "latencyMs": 3,
+      "answer": "Theo thông tin bạn đã chia sẻ: Dart.; Dart.; học Dart..",
+      "error": null
+    },
+    {
+      "id": "memory-preference-write",
+      "group": "memory",
+      "passed": true,
+      "latencyMs": 3,
+      "answer": "Đã ghi nhớ thông tin này cho tài khoản của bạn.",
+      "error": null
+    },
+    {
+      "id": "memory-preference-read",
+      "group": "memory",
+      "passed": true,
+      "latencyMs": 3,
+      "answer": "Theo thông tin bạn đã chia sẻ: giải thích bằng ví dụ dễ hiểu.; giải thích bằng ví dụ dễ hiểu..",
+      "error": null
+    },
+    {
+      "id": "memory-goal",
+      "group": "memory",
+      "passed": true,
+      "latencyMs": 3,
+      "answer": "Đã ghi nhớ mục tiêu AI local này cho tài khoản của bạn.",
+      "error": null
+    },
+    {
+      "id": "rag-flutter-1",
+      "group": "rag-paraphrase",
+      "passed": true,
+      "latencyMs": 8,
+      "answer": "Flutter là framework mã nguồn mở dùng để phát triển ứng dụng đa nền tảng từ một codebase và sử dụng ngôn ngữ Dart.",
+      "error": null
+    },
+    {
+      "id": "rag-flutter-2",
+      "group": "rag-paraphrase",
+      "passed": true,
+      "latencyMs": 8,
+      "answer": "Flutter là framework mã nguồn mở dùng để phát triển ứng dụng đa nền tảng từ một codebase và sử dụng ngôn ngữ Dart.",
+      "error": null
+    },
+    {
+      "id": "rag-flutter-3",
+      "group": "rag-paraphrase",
+      "passed": true,
+      "latencyMs": 9,
+      "answer": "Flutter là framework mã nguồn mở của Google để xây dựng ứng dụng mobile, web và desktop từ một codebase; ngôn ngữ thường dùng là Dart.",
+      "error": null
+    },
+    {
+      "id": "rag-dart",
+      "group": "rag-paraphrase",
+      "passed": true,
+      "latencyMs": 7,
+      "answer": "Flutter là framework mã nguồn mở của Google để xây dựng ứng dụng mobile, web và desktop từ một codebase; ngôn ngữ thường dùng là Dart.",
+      "error": null
+    },
+    {
+      "id": "rag-negative",
+      "group": "rag-negative",
+      "passed": true,
+      "latencyMs": 2,
+      "answer": "AI, hay trí tuệ nhân tạo, là công nghệ giúp máy tính thực hiện các nhiệm vụ và ứng dụng cần khả năng hiểu, học, dự đoán và tạo nội dung.",
+      "error": null
+    },
+    {
+      "id": "rag-negative-2",
+      "group": "rag-negative",
+      "passed": true,
+      "latencyMs": 6,
+      "answer": "TCP có kết nối, kiểm soát thứ tự và độ tin cậy; UDP không thiết lập kết nối, nhẹ và nhanh hơn nhưng không đảm bảo gói tin đến đủ hoặc đúng thứ tự.",
+      "error": null
+    },
+    {
+      "id": "conversation",
+      "group": "conversation",
+      "passed": true,
+      "latencyMs": 11,
+      "answer": "Trong ngữ cảnh trước, nội dung đang nói đến Promise/JavaScript và các tác vụ bất đồng bộ; mình có thể viết ví dụ ngắn cho phần đó.",
+      "error": null
+    },
+    {
+      "id": "conversation-code",
+      "group": "conversation",
+      "passed": true,
+      "latencyMs": 13,
+      "answer": "Trong ngữ cảnh trước, nội dung đang nói đến Promise/JavaScript và các tác vụ bất đồng bộ; mình có thể viết ví dụ ngắn cho phần đó.",
+      "error": null
+    },
+    {
+      "id": "hallucination",
+      "group": "hallucination",
+      "passed": true,
+      "latencyMs": 8,
+      "answer": "Mình chưa có đủ thông tin để trả lời chính xác câu hỏi này. Bạn có thể cung cấp thêm ngữ cảnh hoặc tài liệu liên quan.",
+      "error": null
+    },
+    {
+      "id": "tool-calc",
+      "group": "tool-use",
+      "passed": true,
+      "latencyMs": 3,
+      "answer": "7 * 8 = 56",
+      "error": null
+    },
+    {
+      "id": "tool-calc-2",
+      "group": "tool-use",
+      "passed": true,
+      "latencyMs": 3,
+      "answer": "1.000 tăng 10% = 1.100\nSố tăng thêm: 100",
+      "error": null
+    },
+    {
+      "id": "multi-step",
+      "group": "multi-step",
+      "passed": true,
+      "latencyMs": 9,
+      "answer": "Kế hoạch nên chia thành các bước nhỏ theo ngày: mục tiêu, kiến thức cần học, bài tập thực hành và một lần kiểm tra kết quả.",
+      "error": null
+    },
+    {
+      "id": "safe-unknown",
+      "group": "general-qa",
+      "passed": true,
+      "latencyMs": 8,
+      "answer": "Mình chưa có đủ thông tin để trả lời chính xác câu hỏi này. Bạn có thể cung cấp thêm ngữ cảnh hoặc tài liệu liên quan.",
+      "error": null
+    },
+    {
+      "id": "v2-noaccent-ai",
+      "group": "no-diacritic",
+      "passed": true,
+      "latencyMs": 6,
+      "answer": "AI, hay trí tuệ nhân tạo, là công nghệ giúp máy tính thực hiện các nhiệm vụ và ứng dụng cần khả năng hiểu, học, dự đoán và tạo nội dung.",
+      "error": null
+    },
+    {
+      "id": "v2-noaccent-flutter",
+      "group": "no-diacritic",
+      "passed": true,
+      "latencyMs": 8,
+      "answer": "Flutter là framework mã nguồn mở dùng để phát triển ứng dụng đa nền tảng từ một codebase và sử dụng ngôn ngữ Dart.",
+      "error": null
+    },
+    {
+      "id": "v2-noaccent-dart",
+      "group": "no-diacritic",
+      "passed": true,
+      "latencyMs": 13,
+      "answer": "Dart là ngôn ngữ lập trình được sử dụng phổ biến với Flutter để phát triển ứng dụng mobile, web và desktop.",
+      "error": null
+    },
+    {
+      "id": "v2-noaccent-async",
+      "group": "no-diacritic",
+      "passed": true,
+      "latencyMs": 4,
+      "answer": "async đánh dấu hàm bất đồng bộ và thường trả về Promise; await chờ Promise hoàn tất bên trong hàm async, giúp code dễ đọc hơn.",
+      "error": null
+    },
+    {
+      "id": "v2-noaccent-promise",
+      "group": "no-diacritic",
+      "passed": true,
+      "latencyMs": 12,
+      "answer": "Promise đại diện cho kết quả của một tác vụ bất đồng bộ, có thể ở trạng thái pending, fulfilled hoặc rejected.",
+      "error": null
+    },
+    {
+      "id": "v2-slang-unknown",
+      "group": "slang",
+      "passed": true,
+      "latencyMs": 9,
+      "answer": "Mình chưa có đủ thông tin để xác định lỗi. Hãy gửi đoạn code, thông báo lỗi và kết quả bạn mong muốn.",
+      "error": null
+    },
+    {
+      "id": "v2-short-hello",
+      "group": "slang",
+      "passed": true,
+      "latencyMs": 3,
+      "answer": "Chào bạn. Mình là Kikial. Bạn muốn học, viết code hay khám phá một ý tưởng?",
+      "error": null
+    },
+    {
+      "id": "v2-node-api",
+      "group": "general-qa",
+      "passed": true,
+      "latencyMs": 10,
+      "answer": "Node.js là môi trường chạy JavaScript bên ngoài trình duyệt. Nó thường được sử dụng để xây dựng backend, API và các ứng dụng máy chủ.",
+      "error": null
+    },
+    {
+      "id": "v2-http-auth",
+      "group": "general-qa",
+      "passed": true,
+      "latencyMs": 11,
+      "answer": "HTTP 401 cho biết yêu cầu chưa được xác thực hoặc thông tin xác thực không hợp lệ.",
+      "error": null
+    },
+    {
+      "id": "v2-tcp",
+      "group": "general-qa",
+      "passed": true,
+      "latencyMs": 2,
+      "answer": "TCP có kết nối, kiểm soát thứ tự và độ tin cậy; UDP không thiết lập kết nối, nhẹ và nhanh hơn nhưng không đảm bảo gói tin đến đủ hoặc đúng thứ tự.",
+      "error": null
+    },
+    {
+      "id": "v2-flutter-purpose",
+      "group": "rag-paraphrase",
+      "passed": true,
+      "latencyMs": 7,
+      "answer": "Flutter là framework mã nguồn mở dùng để phát triển ứng dụng đa nền tảng từ một codebase và sử dụng ngôn ngữ Dart.",
+      "error": null
+    },
+    {
+      "id": "v2-flutter-app",
+      "group": "rag-paraphrase",
+      "passed": true,
+      "latencyMs": 8,
+      "answer": "Flutter là framework mã nguồn mở của Google để xây dựng ứng dụng mobile, web và desktop từ một codebase; ngôn ngữ thường dùng là Dart.",
+      "error": null
+    },
+    {
+      "id": "v2-ai-english",
+      "group": "rag-paraphrase",
+      "passed": true,
+      "latencyMs": 2,
+      "answer": "Artificial intelligence (AI), hay trí tuệ nhân tạo, là công nghệ giúp máy tính thực hiện các nhiệm vụ cần khả năng hiểu, học và dự đoán.",
+      "error": null
+    },
+    {
+      "id": "v2-async-specific",
+      "group": "rag-paraphrase",
+      "passed": true,
+      "latencyMs": 10,
+      "answer": "async đánh dấu hàm bất đồng bộ và thường trả về Promise; await chờ Promise hoàn tất bên trong hàm async, giúp code dễ đọc hơn.",
+      "error": null
+    },
+    {
+      "id": "v2-dart-flutter",
+      "group": "rag-paraphrase",
+      "passed": true,
+      "latencyMs": 8,
+      "answer": "Flutter là framework mã nguồn mở của Google để xây dựng ứng dụng mobile, web và desktop từ một codebase; ngôn ngữ thường dùng là Dart.",
+      "error": null
+    },
+    {
+      "id": "v2-math-divide",
+      "group": "math",
+      "passed": true,
+      "latencyMs": 3,
+      "answer": "144 / 12 = 12",
+      "error": null
+    },
+    {
+      "id": "v2-math-increase",
+      "group": "math",
+      "passed": true,
+      "latencyMs": 3,
+      "answer": "1.000 tăng 10% = 1.100\nSố tăng thêm: 100",
+      "error": null
+    },
+    {
+      "id": "v2-math-percent",
+      "group": "math",
+      "passed": true,
+      "latencyMs": 3,
+      "answer": "15% của 200.000 = 30.000",
+      "error": null
+    },
+    {
+      "id": "v2-math-power",
+      "group": "math",
+      "passed": true,
+      "latencyMs": 2,
+      "answer": "3^4 = 81",
+      "error": null
+    },
+    {
+      "id": "v2-math-root",
+      "group": "math",
+      "passed": true,
+      "latencyMs": 2,
+      "answer": "√81 = 9",
+      "error": null
+    },
+    {
+      "id": "v2-followup-flutter",
+      "group": "follow-up",
+      "passed": true,
+      "latencyMs": 10,
+      "answer": "Flutter thường sử dụng ngôn ngữ Dart.",
+      "error": null
+    },
+    {
+      "id": "v2-followup-express",
+      "group": "follow-up",
+      "passed": true,
+      "latencyMs": 2,
+      "answer": "Node.js là runtime JavaScript phía server; Express là framework chạy trên Node.js giúp xây dựng route và middleware nhanh hơn. Hai cái bổ trợ nhau, không phải cùng một loại công cụ.",
+      "error": null
+    },
+    {
+      "id": "v2-followup-compare",
+      "group": "follow-up",
+      "passed": true,
+      "latencyMs": 2,
+      "answer": "Node.js là runtime JavaScript phía server; Express là framework chạy trên Node.js giúp xây dựng route và middleware nhanh hơn. Hai cái bổ trợ nhau, không phải cùng một loại công cụ.",
+      "error": null
+    },
+    {
+      "id": "v2-memory-dart-write",
+      "group": "temporal-memory",
+      "passed": true,
+      "latencyMs": 5,
+      "answer": "Đã ghi nhớ thông tin này cho tài khoản của bạn.",
+      "error": null
+    },
+    {
+      "id": "v2-memory-flutter-write",
+      "group": "temporal-memory",
+      "passed": true,
+      "latencyMs": 8,
+      "answer": "Đã ghi nhớ thông tin này cho tài khoản của bạn.",
+      "error": null
+    },
+    {
+      "id": "v2-memory-current",
+      "group": "temporal-memory",
+      "passed": true,
+      "latencyMs": 4,
+      "answer": "Theo thông tin bạn đã chia sẻ: học Flutter.; học Flutter.; học Dart..",
+      "error": null
+    },
+    {
+      "id": "v2-memory-short-pref",
+      "group": "memory",
+      "passed": true,
+      "latencyMs": 10,
+      "answer": "Đã ghi nhớ thông tin này cho tài khoản của bạn.",
+      "error": null
+    },
+    {
+      "id": "v2-memory-step-pref",
+      "group": "memory",
+      "passed": true,
+      "latencyMs": 12,
+      "answer": "Đã ghi nhớ thông tin này cho tài khoản của bạn.",
+      "error": null
+    },
+    {
+      "id": "v2-memory-project",
+      "group": "memory",
+      "passed": true,
+      "latencyMs": 3,
+      "answer": "Đã ghi nhớ thông tin này cho tài khoản của bạn.",
+      "error": null
+    },
+    {
+      "id": "v2-memory-short-name",
+      "group": "memory",
+      "passed": true,
+      "latencyMs": 3,
+      "answer": "Đã ghi nhớ thông tin này cho tài khoản của bạn.",
+      "error": null
+    },
+    {
+      "id": "v2-memory-education",
+      "group": "memory",
+      "passed": true,
+      "latencyMs": 5,
+      "answer": "Đã ghi nhớ thông tin này cho tài khoản của bạn.",
+      "error": null
+    },
+    {
+      "id": "v2-code-dart-list",
+      "group": "coding",
+      "passed": true,
+      "latencyMs": 7,
+      "answer": "Có thể đặt max bằng phần tử đầu tiên rồi dùng for-in duyệt List. Nếu phần tử hiện tại lớn hơn max thì cập nhật max.",
+      "error": null
+    },
+    {
+      "id": "v2-code-flutter-widget",
+      "group": "coding",
+      "passed": true,
+      "latencyMs": 7,
+      "answer": "Flutter là framework mã nguồn mở dùng để phát triển ứng dụng đa nền tảng từ một codebase và sử dụng ngôn ngữ Dart.",
+      "error": null
+    },
+    {
+      "id": "v2-code-promise",
+      "group": "coding",
+      "passed": true,
+      "latencyMs": 7,
+      "answer": "Promise đại diện cho kết quả của một tác vụ bất đồng bộ, có thể ở trạng thái pending, fulfilled hoặc rejected.",
+      "error": null
+    },
+    {
+      "id": "v2-code-api",
+      "group": "coding",
+      "passed": true,
+      "latencyMs": 9,
+      "answer": "Node.js là môi trường chạy JavaScript bên ngoài trình duyệt. Nó thường được sử dụng để xây dựng backend, API và các ứng dụng máy chủ.",
+      "error": null
+    },
+    {
+      "id": "v2-code-debug",
+      "group": "coding",
+      "passed": true,
+      "latencyMs": 8,
+      "answer": "Khi gặp undefined, hãy kiểm tra tên biến, nơi khởi tạo, dữ liệu đầu vào và dùng console.log để theo dõi giá trị trước khi truy cập thuộc tính.",
+      "error": null
+    },
+    {
+      "id": "v2-tool-natural",
+      "group": "tool-use",
+      "passed": true,
+      "latencyMs": 2,
+      "answer": "7 * 8 = 56",
+      "error": null
+    },
+    {
+      "id": "v2-tool-discount",
+      "group": "tool-use",
+      "passed": true,
+      "latencyMs": 2,
+      "answer": "500.000 giảm 20% = 400.000\nSố tiền giảm: 100.000",
+      "error": null
+    },
+    {
+      "id": "v2-plan-study",
+      "group": "multi-step",
+      "passed": true,
+      "latencyMs": 9,
+      "answer": "Kế hoạch nên chia thành các bước nhỏ theo ngày: mục tiêu, kiến thức cần học, bài tập thực hành và một lần kiểm tra kết quả.",
+      "error": null
+    },
+    {
+      "id": "v2-plan-project",
+      "group": "multi-step",
+      "passed": true,
+      "latencyMs": 10,
+      "answer": "Kế hoạch nên chia thành các bước nhỏ theo ngày: mục tiêu, kiến thức cần học, bài tập thực hành và một lần kiểm tra kết quả.",
+      "error": null
+    },
+    {
+      "id": "v2-document-empty",
+      "group": "document",
+      "passed": true,
+      "latencyMs": 10,
+      "answer": "Tài liệu của bạn không chứa evidence phù hợp để trả lời câu hỏi này.",
+      "error": null
+    },
+    {
+      "id": "v2-research-offline",
+      "group": "research",
+      "passed": true,
+      "latencyMs": 12,
+      "answer": "Mình chưa có đủ thông tin để trả lời chính xác câu hỏi này. Bạn có thể cung cấp thêm ngữ cảnh hoặc tài liệu liên quan.",
+      "error": null
+    },
+    {
+      "id": "v2-injection",
+      "group": "security",
+      "passed": true,
+      "latencyMs": 9,
+      "answer": "Mình chưa có đủ thông tin để trả lời chính xác câu hỏi này. Bạn có thể cung cấp thêm ngữ cảnh hoặc tài liệu liên quan.",
+      "error": null
+    },
+    {
+      "id": "v2-private",
+      "group": "hallucination",
+      "passed": true,
+      "latencyMs": 7,
+      "answer": "Mình chưa có đủ thông tin để trả lời chính xác câu hỏi này. Bạn có thể cung cấp thêm ngữ cảnh hoặc tài liệu liên quan.",
+      "error": null
+    },
+    {
+      "id": "v2-identity",
+      "group": "identity",
+      "passed": true,
+      "latencyMs": 2,
+      "answer": "Mình là Kikial, trợ lý AI local của bạn. Mình hỗ trợ học tập, lập trình, giải thích kiến thức và phát triển ý tưởng.",
+      "error": null
+    },
+    {
+      "id": "v2-noaccent-identity",
+      "group": "no-diacritic",
+      "passed": true,
+      "latencyMs": 2,
+      "answer": "Mình là Kikial, trợ lý AI local của bạn. Mình hỗ trợ học tập, lập trình, giải thích kiến thức và phát triển ý tưởng.",
+      "error": null
+    },
+    {
+      "id": "v2-noaccent-flutter-use",
+      "group": "no-diacritic",
+      "passed": true,
+      "latencyMs": 7,
+      "answer": "Flutter là framework mã nguồn mở dùng để phát triển ứng dụng đa nền tảng từ một codebase và sử dụng ngôn ngữ Dart.",
+      "error": null
+    },
+    {
+      "id": "v2-context-code",
+      "group": "follow-up",
+      "passed": true,
+      "latencyMs": 7,
+      "answer": "Trong ngữ cảnh trước, nội dung đang nói đến Promise/JavaScript và các tác vụ bất đồng bộ; mình có thể viết ví dụ ngắn cho phần đó.",
+      "error": null
+    },
+    {
+      "id": "v2-graph-flutter",
+      "group": "graph-retrieval",
+      "passed": true,
+      "latencyMs": 7,
+      "answer": "Flutter là framework mã nguồn mở dùng để phát triển ứng dụng đa nền tảng từ một codebase và sử dụng ngôn ngữ Dart.",
+      "error": null
+    },
+    {
+      "id": "v2-unknown-fact",
+      "group": "hallucination",
+      "passed": true,
+      "latencyMs": 8,
+      "answer": "Mình chưa có đủ thông tin để trả lời chính xác câu hỏi này. Bạn có thể cung cấp thêm ngữ cảnh hoặc tài liệu liên quan.",
+      "error": null
+    }
+  ]
+}

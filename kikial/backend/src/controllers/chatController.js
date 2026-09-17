@@ -1,67 +1,29 @@
-import { calculate } from '../../lib/calculator.js';
-import {
-  findRelevantKnowledge,
-  findUserMemory,
-  learn,
-  rememberUser,
-} from '../../lib/learningMemory.js';
-import { askAI } from '../services/aiService.js';
+import { orchestrate } from '../ai/orchestrator.js';
 
-function rememberFromQuestion(email, question) {
-  if (!email) return null;
+const MAX_MESSAGE_LENGTH = Number(process.env.MAX_MESSAGE_LENGTH) || 12000;
+const MAX_HISTORY_MESSAGES = Number(process.env.MAX_HISTORY_MESSAGES) || 12;
+const MAX_HISTORY_CHARS = Number(process.env.MAX_HISTORY_CHARS) || 48000;
 
-  const patterns = [
-    {
-      pattern: /(?:tôi tên là|tên tôi là|mình tên là)\s+([^,.!?]+)/i,
-      format: (value) => `Tên người dùng là ${value.trim()}.`,
-    },
-    {
-      pattern: /(?:nhớ rằng|ghi nhớ rằng)\s+(?:tôi|mình)\s+(.+)/i,
-      format: (value) => `Người dùng ${value.trim()}.`,
-    },
-    {
-      pattern: /(?:tôi|mình)\s+(?:đang học|thích học|thích)\s+(.+)/i,
-      format: (value) => `Người dùng ${value.trim()}.`,
-    },
-  ];
-
-  for (const { pattern, format } of patterns) {
-    const match = question.match(pattern);
-    if (match?.[1]) return rememberUser(email, format(match[1]));
-  }
-
-  return null;
-}
-
-export async function handleChat({ body, answerQuestion }) {
-  const { message, history = [], userEmail = '' } = body;
-  const question = String(message || '').trim();
-  const email = String(userEmail).trim().toLowerCase();
-
-  if (!question) {
-    const error = new Error('Vui lòng nhập câu hỏi.');
-    error.statusCode = 400;
+export async function handleChat({ body, user, traceId }) {
+  if (!user?.email) {
+    const error = new Error('Bạn cần đăng nhập để trò chuyện.');
+    error.statusCode = 401;
+    error.code = 'AUTH_ERROR';
     throw error;
   }
 
-  const calculation = calculate(question);
-  const safeHistory = Array.isArray(history)
-    ? history
-        .filter((item) => ['user', 'assistant'].includes(item?.role) && typeof item?.content === 'string')
-        .slice(-12)
-    : [];
-  const relevantKnowledge = calculation ? [] : findRelevantKnowledge(question);
-  const personalMemory = findUserMemory(email);
-  const answer = calculation?.answer || await askAI(
-    question,
-    safeHistory,
-    relevantKnowledge,
-    (prompt) => answerQuestion(prompt, relevantKnowledge),
-    personalMemory,
-  );
+  const question = String(body?.message || '').trim();
+  if (!question || question.length > MAX_MESSAGE_LENGTH) {
+    const error = new Error(question ? `Tin nhắn tối đa ${MAX_MESSAGE_LENGTH} ký tự.` : 'Vui lòng nhập câu hỏi.');
+    error.statusCode = 400;
+    error.code = 'VALIDATION_ERROR';
+    throw error;
+  }
 
-  if (!calculation) await learn(question, answer);
-  await rememberFromQuestion(email, question);
+  const history = Array.isArray(body?.history) ? body.history
+    .filter((item) => ['user', 'assistant'].includes(item?.role) && typeof item.content === 'string')
+    .slice(-MAX_HISTORY_MESSAGES)
+    .map((item) => ({ role: item.role, content: item.content.slice(0, Math.floor(MAX_HISTORY_CHARS / MAX_HISTORY_MESSAGES)) })) : [];
 
-  return { answer, calculated: Boolean(calculation) };
+  return orchestrate({ userId: user.email, message: question, history, traceId });
 }

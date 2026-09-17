@@ -1,0 +1,8 @@
+datasets/*.jsonl
+candidates/*.jsonl
+rejected/*.jsonl
+exports/*.jsonl
+reports/*.json
+configs/*.json
+models/
+*.log

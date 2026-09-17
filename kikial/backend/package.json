@@ -4,6 +4,20 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"start": "node --env-file=.env src/server.js"
+				"start": "node --env-file=.env src/server.js",
+				"test": "node --test tests/*.test.js",
+				"eval": "node evals/runEval.js",
+				"reindex": "node reindex.js",
+				"training:prepare": "node training/commands.js training:prepare",
+				"training:validate": "node training/commands.js training:validate",
+				"training:inspect": "node training/commands.js training:inspect",
+				"training:export:sft": "node training/commands.js training:export:sft",
+				"training:export:preference": "node training/commands.js training:export:preference",
+				"training:run": "node training/commands.js training:run",
+				"benchmark:model": "node training/commands.js benchmark:model",
+				"model:list": "node training/commands.js model:list",
+				"model:promote": "node training/commands.js model:promote",
+				"model:rollback": "node training/commands.js model:rollback",
+				"improvement:report": "node training/commands.js improvement:report"
 	}
 }

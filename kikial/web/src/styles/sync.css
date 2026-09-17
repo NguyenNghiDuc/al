@@ -1,0 +1,346 @@
+:root {
+  color-scheme: dark;
+  --ui-bg: #101113;
+  --ui-panel: #18191d;
+  --ui-raised: #202126;
+  --ui-line: #2c2e34;
+  --ui-text: #f2f3ee;
+  --ui-muted: #a6a9b1;
+  --ui-accent: #d7f36b;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow: hidden;
+  background: var(--ui-bg);
+}
+
+.ki-shell {
+  --shell-bg: var(--ui-bg);
+  --panel-bg: var(--ui-panel);
+  --panel-alt: var(--ui-raised);
+  --sidebar-bg: #141518;
+  --line: var(--ui-line);
+  --text: var(--ui-text);
+  --muted: var(--ui-muted);
+  --soft: #979ba5;
+  --green: var(--ui-accent);
+  grid-template-columns: 240px minmax(0, 1fr) 260px;
+  background: var(--ui-bg);
+  color: var(--ui-text);
+  font-family: Manrope, system-ui, sans-serif;
+}
+
+.ki-main {
+  background:
+    radial-gradient(ellipse at 50% 5%, rgba(215, 243, 107, 0.035), transparent 55%),
+    var(--ui-bg);
+}
+
+.ki-shell button,
+.ki-library button,
+.ki-loading button {
+  border-color: var(--ui-line);
+  background: var(--ui-raised);
+  color: var(--ui-text);
+  font-weight: 600;
+  transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.ki-shell button:hover:not(:disabled),
+.ki-library button:hover:not(:disabled) {
+  border-color: #60664b;
+  background: #2a2d25;
+  color: #f7f9ef;
+}
+
+.ki-shell .ki-primary,
+.ki-shell .ki-new-chat {
+  border-color: var(--ui-accent);
+  background: var(--ui-accent);
+  color: #20260f;
+  font-weight: 800;
+}
+
+.ki-shell .ki-primary:hover:not(:disabled),
+.ki-shell .ki-new-chat:hover:not(:disabled) {
+  border-color: #e4ff8a;
+  background: #e4ff8a;
+  color: #20260f;
+}
+
+.ki-shell input:not([type="radio"]):not([type="checkbox"]),
+.ki-shell textarea,
+.ki-shell select {
+  border-color: #36383f;
+  border-radius: 11px;
+  background: #17181c;
+  color: var(--ui-text);
+}
+
+.ki-shell input::placeholder,
+.ki-shell textarea::placeholder {
+  color: #979ba5;
+}
+
+.ki-shell button:focus-visible,
+.ki-shell a:focus-visible,
+.ki-shell input:focus-visible,
+.ki-shell textarea:focus-visible,
+.ki-shell select:focus-visible,
+.ki-shell summary:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 3px;
+}
+
+.ki-shell h1,
+.ki-shell h2,
+.ki-shell h3 {
+  color: var(--ui-text);
+  letter-spacing: -0.035em;
+}
+
+.ki-muted {
+  color: var(--ui-muted);
+}
+
+.ki-sidebar,
+.ki-right-rail {
+  border-color: var(--ui-line);
+  background: #141518;
+}
+
+.ki-sidebar {
+  padding: 28px 16px 18px;
+}
+
+.ki-brand {
+  margin: 0;
+  padding: 0 10px;
+}
+
+.ki-brand strong {
+  color: var(--ui-text);
+  font-size: 27px;
+  letter-spacing: -1.4px;
+}
+
+.ki-brand strong::before {
+  color: var(--ui-accent);
+  font-size: 29px;
+}
+
+.ki-brand-sub {
+  margin: 6px 0 27px;
+  padding-left: 10px;
+  color: var(--ui-muted);
+  font-size: 11px;
+}
+
+.ki-shell .ki-new-chat {
+  min-height: 44px;
+  border-radius: 11px;
+}
+
+.ki-sidebar-search {
+  margin: 15px 0 22px;
+  border-color: var(--ui-line);
+  background: #1b1c20;
+}
+
+.ki-nav {
+  gap: 5px;
+  margin: 0;
+}
+
+.ki-shell .ki-nav button {
+  min-height: 45px;
+  border-color: transparent;
+  background: transparent;
+  color: #b0b3bc;
+  font-size: 12px;
+}
+
+.ki-shell .ki-nav button.ki-selected {
+  border-color: #454c30;
+  background: #252a1d;
+  color: #e6f3bc;
+}
+
+.ki-profile {
+  padding: 24px 9px 0;
+}
+
+.ki-profile strong {
+  padding-top: 16px;
+  border-top-color: var(--ui-line);
+}
+
+.ki-header {
+  min-height: 78px;
+  padding: 16px 28px;
+  border-bottom-color: var(--ui-line);
+  background: rgba(16, 17, 19, 0.9);
+}
+
+.ki-header h1 {
+  font-size: 17px;
+  letter-spacing: -0.4px;
+}
+
+.ki-header small,
+.ki-muted {
+  color: var(--ui-muted);
+}
+
+.ki-status {
+  border-color: var(--ui-line);
+  border-radius: 30px;
+  background: #1a1d17;
+  color: #d5dfbd;
+}
+
+.ki-scroll,
+.ki-sidebar,
+.ki-right-rail,
+.ki-library-full {
+  scrollbar-color: #52564b transparent;
+}
+
+.ki-content {
+  max-width: 980px;
+  padding: 32px;
+}
+
+.ki-card,
+.ki-shell button.ki-card {
+  border-color: var(--ui-line);
+  border-radius: 16px;
+  background: var(--ui-panel);
+  color: var(--ui-text);
+}
+
+.ki-welcome {
+  margin: clamp(16px, 6vh, 70px) auto 28px;
+}
+
+.ki-welcome > span {
+  border-color: #596437;
+  border-radius: 21px;
+  background: linear-gradient(145deg, #333d21, #1c2116);
+  color: var(--ui-accent);
+}
+
+.ki-shell .ki-welcome .ki-grid > button {
+  border-color: var(--ui-line);
+  border-radius: 15px;
+  background: linear-gradient(145deg, #1d1f22, #17181b);
+}
+
+.ki-shell .ki-welcome .ki-grid > button:hover:not(:disabled) {
+  border-color: #69734b;
+  background: #24281e;
+}
+
+.ki-bubble {
+  border-color: var(--ui-line);
+  border-radius: 17px;
+  background: #191b1e;
+}
+
+.ki-bubble.ki-user {
+  border-color: #414932;
+  background: #262e20;
+}
+
+.ki-bubble > strong {
+  color: #dce9be;
+}
+
+.ki-answer {
+  color: #e4e6e0;
+}
+
+.ki-composer {
+  max-width: 980px;
+  padding: 12px 32px 20px;
+}
+
+.ki-composer form {
+  border-color: #454a3b;
+  border-radius: 20px;
+  background: linear-gradient(130deg, #20231d, #1b1d20);
+}
+
+.ki-composer form:focus-within {
+  border-color: #94a45b;
+  box-shadow: 0 0 0 3px rgba(215, 243, 107, 0.045), 0 12px 40px rgba(0, 0, 0, 0.2);
+}
+
+.ki-right-banner {
+  border-color: #39422b;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #28301e, #1a1e17);
+}
+
+.ki-right-quiz {
+  border-color: var(--ui-line);
+  background: #1a1c20;
+}
+
+.ki-notice {
+  border-bottom-color: #49442e;
+  background: #2a271b;
+  color: #ece1b5;
+}
+
+@media (min-width: 1600px) {
+  .ki-shell {
+    grid-template-columns: 260px minmax(0, 1fr) 285px;
+  }
+
+  .ki-content,
+  .ki-composer {
+    max-width: 1050px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .ki-shell {
+    grid-template-columns: 230px minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .ki-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ki-header {
+    min-height: 70px;
+    padding: 12px 16px;
+  }
+
+  .ki-content {
+    padding: 23px 17px;
+  }
+
+  .ki-composer {
+    padding: 10px 14px 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ki-shell * {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -433,11 +433,13 @@ function calculate(message) {
   // =========================
 
   let expression = text
+    .replace(/^(?:hãy tính giúp tôi|hay tinh giup toi|giúp tôi|giup toi|hãy tính|hay tinh|tính giúp tôi|tinh giup toi)\s*/i, "")
     .replace(/bằng bao nhiêu\??/gi, "")
     .replace(/bằng\??/gi, "")
     .replace(/tính/gi, "")
     .replace(/bao nhiêu\??/gi, "")
     .replace(/\?/g, "")
+    .replace(/[.!]+$/g, "")
     .trim();
 
   // Chỉ coi là calculator nếu có toán tử.

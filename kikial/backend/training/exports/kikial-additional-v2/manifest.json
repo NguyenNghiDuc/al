@@ -1,0 +1,30 @@
+{
+  "version": "kikial-additional-v2",
+  "newCandidates": 30,
+  "executedCodeExamples": 8,
+  "conceptualReviewRequired": 22,
+  "candidateSplits": {
+    "train": 24,
+    "validation": 3,
+    "test": 3
+  },
+  "exportedSplits": {
+    "train": 6,
+    "validation": 1,
+    "test": 1
+  },
+  "trained": false,
+  "modelWeightsChanged": false,
+  "notes": [
+    "Not merged into previous 12 examples.",
+    "No human review or model benchmark claimed.",
+    "Validation/test examples must not be merged into the training split.",
+    "Passing these snippet checks does not prove general chatbot accuracy."
+  ],
+  "sha256": {
+    "candidates.jsonl": "fef975b584d83a07a9f092322deac8c6900d4faf8ae79677328da83db2616688",
+    "test.jsonl": "f5ed21f75a8007a0f018c15c10268a9bd4da3a7e71ce42c0c4292e050691606e",
+    "train.jsonl": "87bd53242cd324386129dd4742bc18af5522c042c1760f2b4cea2e4a0f8b6523",
+    "validation.jsonl": "8e064570abb994dbd39046a49f6a12f8552831478bb47b4fd14ae1645854301a"
+  }
+}

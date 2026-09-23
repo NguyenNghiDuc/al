@@ -1,0 +1,1 @@
+{"messages": [{"role": "user", "content": "Viết Python kiểm tra chuỗi đối xứng, so sánh nguyên văn ký tự."}, {"role": "assistant", "content": "```python\ndef is_palindrome(text):\n    return text == text[::-1]\n```"}]}

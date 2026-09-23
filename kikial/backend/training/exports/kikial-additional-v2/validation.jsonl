@@ -1,0 +1,1 @@
+{"messages": [{"role": "user", "content": "Viết Python tìm ước chung lớn nhất của hai số nguyên bằng Euclid."}, {"role": "assistant", "content": "```python\ndef gcd(a, b):\n    a, b = abs(a), abs(b)\n    while b:\n        a, b = b, a % b\n    return a\n```"}]}

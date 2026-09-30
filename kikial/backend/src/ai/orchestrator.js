@@ -19,6 +19,11 @@ import { composeAnswer } from "./response/answerComposer.js";
 import { getActiveTask, upsertTask } from "./tasks/taskState.js";
 
 const identity = "Mình là Kikial, trợ lý AI local của bạn. Mình hỗ trợ học tập, lập trình, giải thích kiến thức và phát triển ý tưởng.";
+// Điểm khớp phải cao mới được coi là đủ tin cậy để trả lời trực tiếp bằng kho kiến
+// thức tĩnh (và do đó bỏ qua model thật). 0.3 quá thấp — chỉ 1 từ trùng ngẫu nhiên
+// với tiêu đề một mục kiến thức không liên quan cũng có thể vượt qua, khiến câu hỏi
+// hoàn toàn khác chủ đề vẫn bị trả lời sai bằng nội dung có sẵn.
+const STRONG_KNOWLEDGE_MATCH = 0.55;
 const normalize = (value) => String(value || "").normalize("NFD").replace(/\p{Diacritic}/gu, "").replace(/[đĐ]/g, "d").toLowerCase();
 
 function deterministicAnswer(question, analysis, memory, knowledge, toolResult, documentEvidence = [], candidates = [], queryPlan = null) {
@@ -48,7 +53,7 @@ function deterministicAnswer(question, analysis, memory, knowledge, toolResult, 
   if (memory.length && /ten toi|toi dang hoc gi|toi hoc gi|toi thich hoc|muc tieu|nho/.test(text)) {
     return `Theo thông tin bạn đã chia sẻ: ${memory.map((item) => item.value).join("; ")}.`;
   }
-  if (knowledge[0] && knowledge[0].score >= 0.3 && !["PLANNING", "RESEARCH"].includes(analysis.intent)) return knowledge[0].answer;
+  if (knowledge[0] && knowledge[0].score >= STRONG_KNOWLEDGE_MATCH && !["PLANNING", "RESEARCH"].includes(analysis.intent)) return knowledge[0].answer;
   if (/tcp.*udp|udp.*tcp/.test(text)) return "TCP có kết nối, kiểm soát thứ tự và độ tin cậy; UDP không thiết lập kết nối, nhẹ và nhanh hơn nhưng không đảm bảo gói tin đến đủ hoặc đúng thứ tự.";
   if (/tri tue nhan tao|\bai\b/.test(text)) return "AI, hay trí tuệ nhân tạo, là công nghệ giúp máy tính thực hiện các nhiệm vụ và ứng dụng cần khả năng hiểu, học, dự đoán và tạo nội dung.";
   if (/node[ .]?js/.test(text)) return "Node.js là môi trường chạy JavaScript phía máy chủ, thường dùng để xây dựng API và ứng dụng backend.";
@@ -56,7 +61,10 @@ function deterministicAnswer(question, analysis, memory, knowledge, toolResult, 
   if (/async|await/.test(text)) return "async đánh dấu hàm bất đồng bộ và thường trả về Promise; await chờ Promise hoàn tất bên trong hàm async, giúp code dễ đọc hơn.";
   if (/promise/.test(text)) return "Promise đại diện cho kết quả của một tác vụ bất đồng bộ, có thể ở trạng thái pending, fulfilled hoặc rejected.";
   if (/python/.test(text)) return "Ví dụ Python đảo chuỗi: text[::-1]. Đây là slicing từ cuối chuỗi về đầu.";
-  if (/dart.*max|số lớn nhất/.test(text)) return "Ví dụ Dart: int maxValue(List<int> values) { var max = values.first; for (final value in values) { if (value > max) max = value; } return max; }";
+  // "text" đã bị bỏ dấu (xem normalize() ở trên) — vế "số lớn nhất" có dấu sẽ
+  // không bao giờ khớp; phải so bằng bản không dấu "so lon nhat".
+  if (/dart.*max|so lon nhat/.test(text)) return "Ví dụ Dart: int maxValue(List<int> values) { var max = values.first; for (final value in values) { if (value > max) max = value; } return max; }";
+  if (/dart.*list|list.*dart/.test(text)) return "Ví dụ duyệt List trong Dart: for (final item in myList) { print(item); } — hoặc dùng myList.forEach((item) => print(item)); nếu muốn viết ngắn gọn hơn.";
   if (/flutter/.test(text)) return "Flutter là framework mã nguồn mở của Google để xây dựng ứng dụng mobile, web và desktop từ một codebase; ngôn ngữ thường dùng là Dart.";
   if (/ngon ngu.*flutter|flutter.*ngon ngu/.test(text)) return "Flutter thường đi cùng ngôn ngữ Dart.";
   if (safeHistoryHasPromise(analysis, question)) return "Trong ngữ cảnh trước, nó là Promise/JavaScript; bạn có thể dùng nó để biểu diễn và chờ một tác vụ bất đồng bộ.";
@@ -107,12 +115,20 @@ export async function orchestrate({ userId, message, history = [], traceId = ran
   const retrieval = analysis.needsKnowledge ? await searchKnowledge(queryPlan.standalone, 5, { queries: queryPlan.representations }) : [];
   const graphEvidence = analysis.needsKnowledge ? searchGraph(message) : [];
   let toolResult = null;
-  if (analysis.intent === "MATH" && reasoning.budget.maxToolCalls > 0) toolResult = await executeTool("calculator", { userId, traceId }, { question: message });
+  if (analysis.intent === "MATH" && reasoning.budget.maxToolCalls > 0) {
+    try {
+      toolResult = await executeTool("calculator", { userId, traceId }, { question: message });
+    } catch (error) {
+      // Nhận nhầm ý định toán học (hoặc công cụ lỗi) không được phép làm hỏng
+      // cả phản hồi — bỏ qua công cụ và để các bước bên dưới xử lý bình thường.
+      console.warn(`[Kikial][${traceId}] calculator degraded: ${error.message}`);
+    }
+  }
   const documentEvidence = analysis.intent === "DOCUMENT" ? await executeTool("documentSearch", { userId, traceId }, { query: message, limit: 5 }) : [];
   const graphKnowledge = graphEvidence.map((item) => ({ question: `${item.subject} ${item.predicate}`, answer: `${item.subject} ${item.predicate} ${item.object}`, sourceType: "GRAPH", score: item.score }));
   const context = buildContext({ question: message, analysis, memory, knowledge: [...graphKnowledge, ...retrieval], toolResults: [...(toolResult ? [toolResult.answer] : []), ...documentEvidence.map((item) => item.text)], summary: buildConversationSummary(safeHistory), history: safeHistory });
   let answer = deterministicAnswer(message, analysis, memory, retrieval, toolResult, documentEvidence, currentCandidates, queryPlan);
-  let source = toolResult ? "calc" : documentEvidence.length ? "document" : graphEvidence.length || retrieval[0]?.score >= 0.3 ? "knowledge" : "canned";
+  let source = toolResult ? "calc" : documentEvidence.length ? "document" : graphEvidence.length || retrieval[0]?.score >= STRONG_KNOWLEDGE_MATCH ? "knowledge" : "canned";
   let modelUsed = false;
   if (!toolResult && source === "canned" && reasoning.budget.maxModelCalls > 0 && process.env.AI_DISABLE_MODEL !== "true") {
     try {

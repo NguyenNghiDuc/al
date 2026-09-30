@@ -1,6 +1,31 @@
 {
-  "demo@kikial.local": [
-    "Tên người dùng là Đức.",
-    "Người dùng tôi thích học bằng ví dụ."
-  ]
+  "demo@kikial.local": {
+    "profile": [],
+    "preferences": [],
+    "education": [],
+    "projects": [],
+    "goals": [],
+    "episodic": [
+      {
+        "id": "ec8e06f5-8f90-4959-a8d3-bca0144a9249",
+        "type": "episodic",
+        "key": "fact",
+        "value": "Tên người dùng là Đức.",
+        "confidence": 0.7,
+        "source": "legacy",
+        "createdAt": "2026-09-30T03:37:38.248Z",
+        "updatedAt": "2026-09-30T03:37:38.248Z"
+      },
+      {
+        "id": "0eccb09b-bb83-4d57-a842-b834efb26507",
+        "type": "episodic",
+        "key": "fact",
+        "value": "Người dùng tôi thích học bằng ví dụ.",
+        "confidence": 0.7,
+        "source": "legacy",
+        "createdAt": "2026-09-30T03:37:38.248Z",
+        "updatedAt": "2026-09-30T03:37:38.248Z"
+      }
+    ]
+  }
 }

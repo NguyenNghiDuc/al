@@ -238,6 +238,7 @@ function ChatWorkspace({ user, onLogout }) {
   const [tool, setTool] = useState("summary");
   const [toolText, setToolText] = useState("");
   const [fileName, setFileName] = useState("");
+  const [documentSaving, setDocumentSaving] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imageUrl, setImageUrl] = useState("");
   const [webQuery, setWebQuery] = useState("");
@@ -550,6 +551,8 @@ function ChatWorkspace({ user, onLogout }) {
       addAnswer(id, result.answer, {
         source: result.source,
         learnedId: result.learnedId,
+        sources: result.sources || [],
+        retrieval: result.retrieval || { used: false, count: 0 },
       });
     } catch (error) {
       if (!mountedRef.current) return;
@@ -611,6 +614,22 @@ function ChatWorkspace({ user, onLogout }) {
       setNotice(`Đã đọc ${file.name}. Chọn tác vụ rồi đưa sang chat.`);
     } catch {
       if (mountedRef.current) setNotice("Không đọc được file.");
+    }
+  }
+
+  async function saveDocument() {
+    if (!fileName || !toolText.trim() || documentSaving) return;
+    setDocumentSaving(true);
+    try {
+      const result = await api("/api/documents", {
+        method: "POST",
+        body: JSON.stringify({ filename: fileName, text: toolText.trim() }),
+      });
+      if (mountedRef.current) setNotice(`Đã lưu ${result.document.filename} vào thư viện tài liệu.`);
+    } catch (error) {
+      if (mountedRef.current) setNotice(error.message || "Không lưu được tài liệu.");
+    } finally {
+      if (mountedRef.current) setDocumentSaving(false);
     }
   }
 
@@ -1099,6 +1118,14 @@ function ChatWorkspace({ user, onLogout }) {
                       }}
                     >
                       Xóa nội dung
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={busy || documentSaving || !fileName || !toolText.trim()}
+                      onClick={saveDocument}
+                    >
+                      {documentSaving ? "Đang lưu…" : "Lưu vào thư viện tài liệu"}
                     </button>
                   </div>
                 </form>

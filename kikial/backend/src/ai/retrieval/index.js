@@ -1,1 +1,1 @@
-export { searchKnowledge, initializeRetriever, reindexKnowledge, vectorCount } from "./hybridRetriever.js";
+export { searchKnowledge, retrieveEvidence, retrieveFromExperience, initializeRetriever, reindexKnowledge, vectorCount } from "./hybridRetriever.js";

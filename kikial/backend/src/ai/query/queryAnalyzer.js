@@ -28,6 +28,7 @@ export function analyzeQuery(message, history = []) {
     complexity: words.length > 25 || planning || research ? "HIGH" : words.length > 8 ? "MEDIUM" : "LOW",
     ambiguity: /\b(no|do|cai nay|cai do|phan kia)\b/i.test(text) ? "HIGH" : "LOW",
     needsKnowledge: !["MATH", "SIMPLE_CHAT", "MEMORY"].includes(intent),
+    needsRetrieval: !["MATH", "SIMPLE_CHAT", "MEMORY"].includes(intent),
     needsMemory: memory || (hasHistory && /(?:no|do|vay|tiep|vi du cho)/i.test(text)),
     needsTools: math,
     needsFreshInformation: research,

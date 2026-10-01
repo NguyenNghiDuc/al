@@ -7,8 +7,8 @@ import { getModelProvider } from './ai/models/modelRouter.js';
 import { initializeMemoryManager } from './ai/memory/memoryManager.js';
 import { initializeRetriever, vectorCount } from './ai/retrieval/index.js';
 import { graphCount, initializeGraph } from './ai/graph/index.js';
-import { orchestrate } from './ai/orchestrator.js';
 import { addDocument, listDocuments, searchDocuments } from './services/documentService.js';
+import { handleChat } from './controllers/chatController.js';
 import { handleChatRoute } from './routes/chats.js';
 import { getUser, requireAdmin, signToken } from './middleware/auth.js';
 import { getKnowledge, getLearned, initializeMemory, knowledgeCount, learnedCount, pendingCount, promoteToKnowledge, removeItem, verifyLearned } from '../lib/learningMemory.js';
@@ -49,7 +49,7 @@ const requireAuth = (request, response) => { const user = getUser(request); if (
 
 async function health() {
   if (healthCache.expires > Date.now()) return healthCache.value;
-  const model = getModelProvider(); const provider = await model.health();
+  const model = await getModelProvider(); const provider = await model.health();
   let vectorItems = 0; let vectorOnline = true;
   try { vectorItems = await vectorCount(); } catch { vectorOnline = false; }
   const degraded = [];
@@ -83,7 +83,7 @@ async function handleRequest(request, response) {
     if (request.method === 'POST' && requestPath === '/api/documents/search') { const user = requireAuth(request, response); if (user) { const body = await readJson(request); sendJson(response, 200, { ok: true, chunks: await searchDocuments(user.email, body.query, 5) }); } return; }
     if (request.method === 'POST' && requestPath === '/api/chat/stream') {
       const user = requireAuth(request, response); if (!user) return;
-      const body = await readJson(request); const result = await orchestrate({ userId: user.email, message: body.message, history: body.history, traceId });
+      const body = await readJson(request); const result = await handleChat({ body, user, traceId });
       response.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
       response.write(`event: status\ndata: ${JSON.stringify({ status: 'complete', traceId })}\n\n`);
       response.write(`event: answer_delta\ndata: ${JSON.stringify({ text: result.answer })}\n\n`);

@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const dataDirectory = join(fileURLToPath(new URL("../../data/", import.meta.url)));
-const documentPath = join(dataDirectory, "documents.json");
+const documentPath = process.env.KIKIAL_DOCUMENTS_PATH || join(dataDirectory, "documents.json");
 let documents = [];
 let loaded = false;
 let writeQueue = Promise.resolve();
@@ -20,7 +20,7 @@ export async function addDocument(userId, filename, text) {
   const chunks = cleanText.match(/[\s\S]{1,1600}/g) || [];
   if (chunks.length > (Number(process.env.MAX_DOCUMENT_CHUNKS) || 200)) throw new Error("Tài liệu có quá nhiều phần.");
   const documentId = randomUUID();
-  const document = { documentId, userId, filename: cleanName, createdAt: new Date().toISOString(), chunks: chunks.map((chunk, index) => ({ documentId, userId, filename: cleanName, chunkIndex: index, text: chunk })) };
+  const document = { documentId, userId, filename: cleanName, createdAt: new Date().toISOString(), chunks: chunks.map((chunk, index) => ({ documentId, userId, filename: cleanName, chunkIndex: index, chunkId: `${documentId}:${index}`, text: chunk })) };
   document.chunks = document.chunks.map((chunk) => ({ ...chunk, documentId: document.documentId }));
   documents.push(document); await save(); return document;
 }

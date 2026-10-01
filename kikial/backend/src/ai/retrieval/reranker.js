@@ -6,8 +6,8 @@ export function rerank(question, candidates, limit = 5) {
   const query = normalize(question);
   const queryTokens = tokens(question);
   return candidates.map((item) => {
-    const title = normalize(item.question);
-    const answer = normalize(item.answer);
+    const title = normalize(item.question || item.filename || "");
+    const answer = normalize(item.answer || item.text || item.content || "");
     let titleOverlap = 0;
     let answerOverlap = 0;
     const titleTokens = tokens(title);
@@ -21,7 +21,7 @@ export function rerank(question, candidates, limit = 5) {
     const topic = queryTokens.size && [...queryTokens].some((token) => title.includes(token)) ? 1 : 0;
     const entity = [...queryTokens].filter((token) => token.length >= 4 && titleTokens.has(token)).length ? 1 : 0;
     const verified = item.verified ? 1 : 0;
-    const semantic = Number(item.similarity || 0);
+    const semantic = Number(item.similarity ?? item.score ?? 0);
     const sourceQuality = item.sourceType === "GRAPH" ? 0.9 : item.store === "knowledge" || item.verified ? 1 : 0.7;
     const score = exact * 0.4 + lexical * 0.3 + semantic * 0.12 + topic * 0.06 + entity * 0.07 + verified * 0.03 + sourceQuality * 0.02;
     return { ...item, score, lexicalScore: lexical, entityMatch: entity, sourceType: item.sourceType || (item.store === "learned" ? "LEARNED_VERIFIED" : "CURATED") };

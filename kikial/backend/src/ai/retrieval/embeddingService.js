@@ -26,7 +26,7 @@ export async function embedText(text, { allowRemote = true } = {}) {
   if (cache.has(key)) return cache.get(key);
   let vector = null;
   if (allowRemote && process.env.AI_EMBEDDING_OFFLINE !== "true") {
-    try { vector = (await getModelProvider().embed(key))[0] || null; } catch { /* lexical/local fallback remains available */ }
+    try { vector = (await (await getModelProvider()).embed(key))[0] || null; } catch { /* lexical/local fallback remains available */ }
   }
   vector ||= localEmbedding(key);
   cache.set(key, vector);
@@ -37,7 +37,7 @@ export async function embedMany(texts) {
   const missing = texts.filter((text) => !cache.has(normalize(text)));
   if (missing.length && process.env.AI_EMBEDDING_OFFLINE !== "true") {
     try {
-      const vectors = await getModelProvider().embed(missing);
+      const vectors = await (await getModelProvider()).embed(missing);
       missing.forEach((text, index) => cache.set(normalize(text), vectors[index] || localEmbedding(text)));
     } catch { /* use local deterministic vectors */ }
   }

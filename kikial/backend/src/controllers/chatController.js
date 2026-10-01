@@ -4,7 +4,7 @@ const MAX_MESSAGE_LENGTH = Number(process.env.MAX_MESSAGE_LENGTH) || 12000;
 const MAX_HISTORY_MESSAGES = Number(process.env.MAX_HISTORY_MESSAGES) || 12;
 const MAX_HISTORY_CHARS = Number(process.env.MAX_HISTORY_CHARS) || 48000;
 
-export async function handleChat({ body, user, traceId }) {
+export async function handleChat({ body, user, traceId, runOrchestrator = orchestrate }) {
   if (!user?.email) {
     const error = new Error('Bạn cần đăng nhập để trò chuyện.');
     error.statusCode = 401;
@@ -25,5 +25,5 @@ export async function handleChat({ body, user, traceId }) {
     .slice(-MAX_HISTORY_MESSAGES)
     .map((item) => ({ role: item.role, content: item.content.slice(0, Math.floor(MAX_HISTORY_CHARS / MAX_HISTORY_MESSAGES)) })) : [];
 
-  return orchestrate({ userId: user.email, message: question, history, traceId });
+  return runOrchestrator({ userId: user.email, message: question, history, traceId });
 }

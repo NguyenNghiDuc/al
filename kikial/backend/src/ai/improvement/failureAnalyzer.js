@@ -17,8 +17,8 @@ export function classifyFailure(failure = {}) {
   return "UNKNOWN";
 }
 
-export function analyzeFailures(report = {}) {
-  return (report.failedCases || []).map((failure) => ({
+export function analyzeFailure(failure = {}, report = {}) {
+  return {
     id: failure.id || randomUUID(),
     testId: failure.id || null,
     query: String(failure.message || failure.query || "").slice(0, 1000),
@@ -30,7 +30,9 @@ export function analyzeFailures(report = {}) {
     promptVersion: failure.promptVersion || "v1",
     retrievalTrace: Array.isArray(failure.retrieval) ? failure.retrieval : [],
     createdAt: new Date().toISOString(),
-  }));
+  };
 }
+
+export function analyzeFailures(report = {}) { return (report.failedCases || []).map((failure) => analyzeFailure(failure, report)); }
 
 export function failureFingerprint(failure) { return createHash("sha256").update(`${failure.category}:${failure.query}:${failure.actualBehavior}`).digest("hex"); }

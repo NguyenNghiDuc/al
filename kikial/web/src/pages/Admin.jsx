@@ -60,6 +60,7 @@ function KnowledgeTable({ items, query, setQuery, filter, setFilter, busyId, upd
 export default function AdminPage({ user, onBack, onLogout, embedded = false }) {
   const [tab, setTab] = useState("overview");
   const [overview, setOverview] = useState(null);
+  const [runtime, setRuntime] = useState(null);
   const [items, setItems] = useState([]);
   const [users, setUsers] = useState([]);
   const [query, setQuery] = useState("");
@@ -73,12 +74,14 @@ export default function AdminPage({ user, onBack, onLogout, embedded = false }) 
     setLoading(true);
     setError("");
     try {
-      const [summary, knowledge, accountList] = await Promise.all([
+      const [summary, knowledge, accountList, runtimeResponse] = await Promise.all([
         api("/api/admin/overview"),
         api("/api/admin/knowledge"),
         api("/api/admin/users"),
+        api("/api/admin/runtime").catch(() => ({ runtime: null })),
       ]);
       setOverview(summary);
+      setRuntime(runtimeResponse.runtime || null);
       setItems(Array.isArray(knowledge.items) ? knowledge.items : []);
       setUsers(Array.isArray(accountList.items) ? accountList.items : []);
     } catch (err) {
@@ -150,6 +153,8 @@ export default function AdminPage({ user, onBack, onLogout, embedded = false }) 
 
   const stats = overview?.stats || {};
   const system = overview?.system || {};
+  const errorPercent = runtime?.requests ? `${(runtime.errorRate * 100).toFixed(1)}%` : "0%";
+  const uptime = runtime?.uptimeSeconds == null ? "—" : runtime.uptimeSeconds < 3600 ? `${Math.floor(runtime.uptimeSeconds / 60)} phút` : `${(runtime.uptimeSeconds / 3600).toFixed(1)} giờ`;
 
   return (
     <div className="admin-page">
@@ -179,7 +184,7 @@ export default function AdminPage({ user, onBack, onLogout, embedded = false }) 
         <header className="admin-header">
           <div>
             <h1>{NAV.find(([id]) => id === tab)?.[1]}</h1>
-            <p>Quản lý kiến thức, tài khoản và trạng thái hệ thống AI của Kikial.</p>
+            <p>Quản lý kiến thức, tài khoản, hiệu năng và trạng thái hệ thống AI của Kikial.</p>
           </div>
           <div className="admin-header-actions">
             <button className="admin-ghost" onClick={onBack}>Về chat</button>
@@ -194,8 +199,8 @@ export default function AdminPage({ user, onBack, onLogout, embedded = false }) 
             <section className="admin-grid">
               <div className="admin-stat"><div className="label">Người dùng</div><div className="value">{stats.users ?? "—"}</div><div className="sub">{stats.admins ?? 0} quản trị viên</div></div>
               <div className="admin-stat"><div className="label">Knowledge</div><div className="value">{stats.knowledge ?? "—"}</div><div className="sub">Kho tri thức đã quản lý</div></div>
-              <div className="admin-stat"><div className="label">Đã học</div><div className="value">{stats.learned ?? "—"}</div><div className="sub">{stats.pending ?? 0} đang chờ duyệt</div></div>
-              <div className="admin-stat"><div className="label">Vector index</div><div className="value">{stats.vectors ?? "—"}</div><div className="sub">{stats.graph ?? 0} graph facts</div></div>
+              <div className="admin-stat"><div className="label">Requests</div><div className="value">{runtime?.requests ?? "—"}</div><div className="sub">Error rate {errorPercent}</div></div>
+              <div className="admin-stat"><div className="label">Latency</div><div className="value">{runtime?.averageLatencyMs != null ? `${runtime.averageLatencyMs} ms` : "—"}</div><div className="sub">Peak {runtime?.peakLatencyMs ?? "—"} ms</div></div>
             </section>
 
             <section className="admin-panels">
@@ -247,7 +252,10 @@ export default function AdminPage({ user, onBack, onLogout, embedded = false }) 
                 <div className="admin-kv-row"><span>Provider</span><strong>{system.aiProvider || "ollama"}</strong></div>
                 <div className="admin-kv-row"><span>Model</span><strong>{system.model || "—"}</strong></div>
                 <div className="admin-kv-row"><span>Embedding model</span><strong>{system.embeddingModel || "—"}</strong></div>
-                <div className="admin-kv-row"><span>Service</span><strong>{system.service || "—"}</strong></div>
+                <div className="admin-kv-row"><span>Uptime</span><strong>{uptime}</strong></div>
+                <div className="admin-kv-row"><span>Requests</span><strong>{runtime?.requests ?? "—"}</strong></div>
+                <div className="admin-kv-row"><span>Error rate</span><strong>{errorPercent}</strong></div>
+                <div className="admin-kv-row"><span>Avg latency</span><strong>{runtime?.averageLatencyMs != null ? `${runtime.averageLatencyMs} ms` : "—"}</strong></div>
               </div>
             </article>
             <article className="admin-panel">
@@ -259,6 +267,17 @@ export default function AdminPage({ user, onBack, onLogout, embedded = false }) 
                 <div className="admin-kv-row"><span>Pending training data</span><strong>{stats.pending ?? 0}</strong></div>
               </div>
             </article>
+            {runtime?.routes?.length > 0 && (
+              <article className="admin-panel" style={{ gridColumn: "1 / -1" }}>
+                <h2>Endpoint gần đây</h2>
+                <div className="admin-table-wrap">
+                  <table className="admin-table">
+                    <thead><tr><th>Route</th><th>Requests</th><th>Errors</th><th>Avg</th><th>Max</th></tr></thead>
+                    <tbody>{runtime.routes.slice(0, 12).map((row) => <tr key={row.route}><td><strong>{row.route}</strong></td><td>{row.requests}</td><td>{row.errors}</td><td>{row.averageLatencyMs} ms</td><td>{row.maxLatencyMs} ms</td></tr>)}</tbody>
+                  </table>
+                </div>
+              </article>
+            )}
           </section>
         )}
       </main>

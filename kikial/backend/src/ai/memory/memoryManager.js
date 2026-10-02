@@ -13,7 +13,6 @@ function normalizeMemory(userMemory) {
   const result = {};
   for (const [userId, value] of Object.entries(userMemory || {})) {
     const target = emptyProfile();
-    // Legacy arrays are copied into episodic memory; structured records keep their original buckets.
     const legacy = Array.isArray(value) ? value : [];
     for (const item of legacy) {
       const text = typeof item === "string" ? item : item?.value;
@@ -82,7 +81,14 @@ export async function remember(userId, candidate) {
     await saveUserMemory(memoryStore);
     return { ...candidate, status: "SUPERSEDED" };
   }
-  const item = { id: candidate.id || randomUUID(), type, key: candidate.key || "fact", value: safeValue(candidate.value), confidence: Math.min(1, Number(candidate.confidence) || 0.7), source: candidate.source || "user_message", createdAt: candidate.createdAt || now(), updatedAt: now(), validFrom: candidate.validFrom || now(), lastUsedAt: null, status: "ACTIVE", supersedes: null };
+  const item = { id: candidate.id || randomUUID(), type, key: candidate.key || "fact", value: safeValue(candidate.value), confidence: Math.min(1, Number(candidate.confidence) || 0.7), source: candidate.source || "user_message", createdAt: candidate.createdAt || now(), updatedAt: now(), validFrom: candidate.validFrom || now(), lastUsedAt: null, useCount: 0, status: "ACTIVE", supersedes: null };
+  const exactIndex = record[type].findIndex((entry) => entry.status !== "SUPERSEDED" && entry.key === item.key && normalize(entry.value) === normalize(item.value));
+  if (exactIndex >= 0) {
+    const existing = record[type][exactIndex];
+    record[type][exactIndex] = { ...existing, confidence: Math.max(Number(existing.confidence) || 0, item.confidence), updatedAt: item.updatedAt, source: item.source };
+    await saveUserMemory(memoryStore);
+    return record[type][exactIndex];
+  }
   const index = record[type].findIndex((entry) => entry.key === item.key && entry.status !== "SUPERSEDED");
   if (index === -1) record[type].push(item);
   else if (normalize(record[type][index].value) !== normalize(item.value)) {
@@ -95,6 +101,14 @@ export async function remember(userId, candidate) {
   return item;
 }
 
+function recencyWeight(item) {
+  const timestamp = Date.parse(item.lastUsedAt || item.updatedAt || item.createdAt || 0);
+  if (!Number.isFinite(timestamp)) return 0.6;
+  const ageDays = Math.max(0, (Date.now() - timestamp) / 86_400_000);
+  const halfLife = item.type === "episodic" ? 30 : ["profile", "preferences", "goals"].includes(item.type) ? 365 : 120;
+  return Math.pow(0.5, ageDays / halfLife);
+}
+
 export async function retrieveRelevant(userId, query, limit = 8) {
   const record = userRecord(userId);
   if (!record) return [];
@@ -102,12 +116,26 @@ export async function retrieveRelevant(userId, query, limit = 8) {
   const desiredKey = /ten/.test(normalizedQuery) ? "name" : /thich/.test(normalizedQuery) ? "response_style" : /hoc|ngon ngu/.test(normalizedQuery) ? "learning" : /muc tieu|goal/.test(normalizedQuery) ? "primary_goal" : null;
   const queryWords = new Set(normalizedQuery.split(" ").filter((word) => word.length > 2 && !["toi", "minh", "ban", "la", "gi", "dang", "nho"].includes(word)));
   const items = Object.values(record).flat().filter((item) => item?.value && item.status !== "SUPERSEDED" && (!desiredKey || item.key === desiredKey));
-  return items.map((item) => {
+  const ranked = items.map((item) => {
     const aliases = { name: "ten", learning: "hoc ngon ngu", response_style: "thich cach hoc", primary_goal: "muc tieu" };
     const valueWords = new Set(normalize(`${item.key} ${aliases[item.key] || ""} ${item.value}`).split(" "));
     const overlap = [...queryWords].filter((word) => valueWords.has(word)).length;
-    return { ...item, score: queryWords.size ? overlap / queryWords.size : 0 };
-  }).filter((item) => item.score > 0).sort((a, b) => b.score - a.score || String(b.updatedAt).localeCompare(String(a.updatedAt))).slice(0, limit);
+    const semanticProxy = queryWords.size ? overlap / queryWords.size : 0.45;
+    const confidence = Math.max(0, Math.min(1, Number(item.confidence) || 0.7));
+    const stableBoost = ["profile", "preferences", "goals"].includes(item.type) ? 0.1 : 0;
+    const score = Math.min(1, semanticProxy * 0.65 + recencyWeight(item) * 0.2 + confidence * 0.15 + stableBoost);
+    return { ...item, score };
+  }).filter((item) => queryWords.size === 0 || item.score >= 0.18)
+    .sort((a, b) => b.score - a.score || String(b.updatedAt).localeCompare(String(a.updatedAt))).slice(0, limit);
+
+  if (ranked.length) {
+    const used = new Set(ranked.map((item) => item.id));
+    for (const bucket of Object.values(record)) {
+      for (const entry of bucket) if (used.has(entry.id)) { entry.lastUsedAt = now(); entry.useCount = (Number(entry.useCount) || 0) + 1; }
+    }
+    await saveUserMemory(memoryStore);
+  }
+  return ranked;
 }
 
 export async function forget(userId, idOrKey) {

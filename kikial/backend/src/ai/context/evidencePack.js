@@ -43,12 +43,18 @@ export function createEvidencePack({ query, memory = [], knowledge = [], documen
   const selected = selectEvidence(retrieved, limits);
   const retrievedItems = selected.map((entry) => {
     const sourceType = String(entry.sourceType || "knowledge").toLowerCase();
-    const trust = sourceType === "document" ? 0.9 : sourceType === "web" ? 0.65 : entry.verified ? 1 : 0.8;
-    return item(sourceType, entry.sourceId || entry.id, entry.text, entry.score, trust, entry.createdAt, {
+    const trust = Number.isFinite(Number(entry.trust))
+      ? Number(entry.trust)
+      : sourceType === "document" ? 0.9 : sourceType === "web" ? 0.65 : entry.verified ? 1 : 0.8;
+    return item(sourceType, entry.sourceId || entry.id, entry.text, entry.score, trust, entry.publishedAt || entry.createdAt || entry.timestamp, {
       filename: entry.filename || null,
       chunkId: entry.chunkId || entry.id || null,
-      title: entry.title || null,
+      title: entry.title || entry.question || null,
       url: entry.url || null,
+      domain: entry.domain || null,
+      publishedAt: entry.publishedAt || null,
+      bm25Score: entry.bm25Score ?? null,
+      semanticScore: entry.similarity ?? null,
       ...(sourceType === "lesson" ? { lessonId: entry.lessonId || entry.id, confidence: entry.confidence || entry.score, provenance: entry.provenance || [] } : {}),
     });
   });
@@ -57,8 +63,6 @@ export function createEvidencePack({ query, memory = [], knowledge = [], documen
   return {
     query,
     userMemories: memory.map((entry) => item("USER_MEMORY", entry.id || entry.key, entry.value, entry.score, 0.9, entry.updatedAt)),
-    // Web evidence lives in this selected pool too because orchestrator synthesizes
-    // knowledge + documents + experience. It retains sourceType="web", URL/title and lower trust.
     knowledge: [
       ...knowledge.map((entry) => item(entry.sourceType || "CURATED", entry.id, entry.text || entry.answer, entry.score, entry.verified ? 1 : 0.8, entry.updatedAt)),
       ...retrievedItems.filter((entry) => ["knowledge", "verified_lesson", "lesson", "web"].includes(entry.sourceType)),
@@ -72,7 +76,7 @@ export function createEvidencePack({ query, memory = [], knowledge = [], documen
       ...bySource("experience"),
     ],
     toolResults: toolResults.map((entry) => item("TOOL", entry.tool || entry.name, entry.data || entry.answer || entry, 1, 1)),
-    webResults: webResults.map((entry) => item("web", entry.sourceId || entry.id || entry.url, entry.content || entry.text || entry.answer, entry.score, entry.trust || 0.65, entry.timestamp, { title: entry.title || null, url: entry.url || null })),
+    webResults: webResults.map((entry) => item("web", entry.sourceId || entry.id || entry.url, entry.content || entry.text || entry.answer, entry.score, entry.trust || 0.65, entry.publishedAt || entry.timestamp, { title: entry.title || null, url: entry.url || null, domain: entry.domain || null, publishedAt: entry.publishedAt || null })),
   };
 }
 

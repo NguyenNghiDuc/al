@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node --env-file=.env src/server.js",
+    "start": "node --env-file=.env --import ./src/runtime/preload.js src/server.js",
     "test": "node --test tests/*.test.js",
     "eval": "node evals/runEval.js",
     "reindex": "node reindex.js",

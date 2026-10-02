@@ -7,6 +7,8 @@ import { buildContext } from "../src/ai/context/contextBuilder.js";
 import { extractCandidateMemories } from "../src/ai/memory/memoryManager.js";
 import { executeTool } from "../src/ai/tools/index.js";
 import { codingAgent } from "../src/ai/agents/codingAgent.js";
+import { shouldSearchWeb, webSearchEnabled } from "../src/ai/retrieval/webSearch.js";
+import { OpenAICompatibleProvider } from "../src/ai/models/openAICompatibleProvider.js";
 
 const answer = (question) => calculate(question)?.answer;
 
@@ -58,4 +60,30 @@ test("coding agent never executes arbitrary shell", () => {
   const result = codingAgent({ code: "exec('rm -rf /')", language: "js" });
   assert.equal(result.execution, "disabled");
   assert.ok(result.issues.length);
+});
+
+test("web search only activates when configured and the query needs freshness", () => {
+  const previousUrl = process.env.SEARXNG_URL;
+  const previousAlways = process.env.WEB_SEARCH_ALWAYS;
+  delete process.env.SEARXNG_URL;
+  delete process.env.WEB_SEARCH_ALWAYS;
+  assert.equal(webSearchEnabled(), false);
+  assert.equal(shouldSearchWeb("tin mới nhất hôm nay"), false);
+
+  process.env.SEARXNG_URL = "http://127.0.0.1:8080";
+  assert.equal(webSearchEnabled(), true);
+  assert.equal(shouldSearchWeb("tin mới nhất hôm nay"), true);
+  assert.equal(shouldSearchWeb("2 + 2 bằng mấy"), false);
+
+  if (previousUrl === undefined) delete process.env.SEARXNG_URL;
+  else process.env.SEARXNG_URL = previousUrl;
+  if (previousAlways === undefined) delete process.env.WEB_SEARCH_ALWAYS;
+  else process.env.WEB_SEARCH_ALWAYS = previousAlways;
+});
+
+test("OpenAI-compatible provider exposes the common model contract", () => {
+  const provider = new OpenAICompatibleProvider({ baseUrl: "http://127.0.0.1:1234/v1", model: "test-model", embeddingModel: "test-embed" });
+  assert.equal(provider.model, "test-model");
+  assert.equal(provider.embeddingModel, "test-embed");
+  assert.equal(provider.supportsTools(), true);
 });

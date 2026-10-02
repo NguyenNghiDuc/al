@@ -55,7 +55,7 @@ function deterministicAnswer(question, analysis, memory, knowledge, toolResult, 
   if (/node[ .]?js/.test(text)) return "Node.js là môi trường chạy JavaScript phía máy chủ, thường dùng để xây dựng API và ứng dụng backend.";
   if (/http 401|401/.test(text)) return "HTTP 401 cho biết yêu cầu chưa được xác thực hoặc thông tin xác thực không hợp lệ.";
   if (/python/.test(text)) return "Ví dụ Python đảo chuỗi: text[::-1]. Đây là slicing từ cuối chuỗi về đầu.";
-  if (/dart.*max|so lon nhat/.test(text)) return "Ví dụ Dart: int maxValue(List<int> values) { var max = values.first; for (final value of values) { if (value > max) max = value; } return max; }";
+  if (/dart.*max|so lon nhat/.test(text)) return "Ví dụ Dart: int maxValue(List<int> values) { var max = values.first; for (final value in values) { if (value > max) max = value; } return max; }";
   if (/dart.*list|list.*dart/.test(text)) return "Ví dụ duyệt List trong Dart: for (final item in myList) { print(item); } — hoặc dùng myList.forEach((item) => print(item)); nếu muốn viết ngắn gọn hơn.";
   if (/flutter/.test(text)) return "Flutter là framework mã nguồn mở của Google để xây dựng ứng dụng mobile, web và desktop từ một codebase; ngôn ngữ thường dùng là Dart.";
   if (/ngon ngu.*flutter|flutter.*ngon ngu/.test(text)) return "Flutter thường đi cùng ngôn ngữ Dart.";
@@ -251,8 +251,6 @@ export async function orchestrate({
 
   let verification = verifyResponse({ question: message, answer, analysis, retrieval: retrievedChunks, toolResult });
 
-  // Repair once when the verifier finds a concrete problem and the reasoning budget
-  // allows another model call. This is a bounded generate -> verify -> repair loop.
   if (
     modelUsed
     && !verification.passed

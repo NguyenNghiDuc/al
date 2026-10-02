@@ -13,7 +13,51 @@ function Status({ ok, label }) {
   return <span className={`admin-status ${ok ? "ok" : "off"}`}>{label}</span>;
 }
 
-export default function AdminPage({ user, onBack, onLogout }) {
+function KnowledgeTable({ items, query, setQuery, filter, setFilter, busyId, updateItem }) {
+  const visibleItems = useMemo(() => {
+    const needle = query.trim().toLocaleLowerCase("vi");
+    return items.filter((item) => {
+      const text = `${item.question || ""} ${item.answer || ""}`.toLocaleLowerCase("vi");
+      const matchesFilter = filter === "all" || (filter === "verified" && item.verified) || (filter === "pending" && !item.verified);
+      return matchesFilter && text.includes(needle);
+    });
+  }, [items, query, filter]);
+
+  return (
+    <>
+      <div className="admin-toolbar">
+        <input className="admin-input" placeholder="Tìm câu hỏi hoặc câu trả lời…" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <select className="admin-select" value={filter} onChange={(e) => setFilter(e.target.value)}>
+          <option value="all">Tất cả</option>
+          <option value="pending">Chờ duyệt</option>
+          <option value="verified">Đã duyệt</option>
+        </select>
+      </div>
+      <div className="admin-table-wrap">
+        <table className="admin-table">
+          <thead><tr><th>Trạng thái</th><th>Câu hỏi</th><th>Câu trả lời</th><th>Thao tác</th></tr></thead>
+          <tbody>
+            {visibleItems.map((item) => (
+              <tr key={item.id}>
+                <td><span className={`admin-status ${item.verified ? "ok" : "warn"}`}>{item.verified ? "Verified" : "Pending"}</span></td>
+                <td><strong>{item.question}</strong><div style={{ color: "var(--admin-muted)", fontSize: 12, marginTop: 6 }}>{item.hits || 0} lượt dùng</div></td>
+                <td className="admin-answer-cell">{item.answer}</td>
+                <td><div style={{ display: "grid", gap: 7 }}>
+                  {!item.verified && <button className="admin-primary" disabled={Boolean(busyId)} onClick={() => updateItem(item, "approve")}>Duyệt</button>}
+                  {item.verified && item.store !== "knowledge" && <button className="admin-ghost" disabled={Boolean(busyId)} onClick={() => updateItem(item, "promote")}>Promote</button>}
+                  <button className="admin-danger-btn" disabled={Boolean(busyId)} onClick={() => updateItem(item, "delete")}>Xóa</button>
+                </div></td>
+              </tr>
+            ))}
+            {!visibleItems.length && <tr><td colSpan="4" className="admin-empty">Không có dữ liệu phù hợp.</td></tr>}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
+export default function AdminPage({ user, onBack, onLogout, embedded = false }) {
   const [tab, setTab] = useState("overview");
   const [overview, setOverview] = useState(null);
   const [items, setItems] = useState([]);
@@ -71,17 +115,13 @@ export default function AdminPage({ user, onBack, onLogout }) {
     }
   }
 
-  const visibleItems = useMemo(() => {
-    const needle = query.trim().toLocaleLowerCase("vi");
-    return items.filter((item) => {
-      const text = `${item.question || ""} ${item.answer || ""}`.toLocaleLowerCase("vi");
-      const matchesFilter = filter === "all" || (filter === "verified" && item.verified) || (filter === "pending" && !item.verified);
-      return matchesFilter && text.includes(needle);
-    });
-  }, [items, query, filter]);
-
   if (user?.role !== "admin") {
-    return (
+    return embedded ? (
+      <section className="ki-card">
+        <h3>Thư viện cá nhân</h3>
+        <p>Kho kiến thức hệ thống chỉ dành cho admin. Bạn vẫn có thể thêm tài liệu của riêng mình trong mục Công cụ AI.</p>
+      </section>
+    ) : (
       <main className="admin-page" style={{ display: "grid", placeItems: "center", padding: 24 }}>
         <section className="admin-panel" style={{ maxWidth: 520 }}>
           <h2>Không có quyền quản trị</h2>
@@ -89,6 +129,22 @@ export default function AdminPage({ user, onBack, onLogout }) {
           <button className="admin-primary" onClick={onBack}>Về chat</button>
         </section>
       </main>
+    );
+  }
+
+  if (embedded) {
+    return (
+      <section className="admin-panel" style={{ padding: 18 }}>
+        <div className="admin-header" style={{ marginBottom: 16 }}>
+          <div>
+            <h2 style={{ margin: 0 }}>Thư viện kiến thức</h2>
+            <p>{items.length} bản ghi · {items.filter((item) => !item.verified).length} chờ duyệt</p>
+          </div>
+          <button className="admin-ghost" onClick={loadAll} disabled={loading}>{loading ? "Đang tải…" : "↻ Làm mới"}</button>
+        </div>
+        {error && <p className="admin-error" role="alert">{error}</p>}
+        <KnowledgeTable items={items} query={query} setQuery={setQuery} filter={filter} setFilter={setFilter} busyId={busyId} updateItem={updateItem} />
+      </section>
     );
   }
 
@@ -168,32 +224,7 @@ export default function AdminPage({ user, onBack, onLogout }) {
 
         {tab === "knowledge" && (
           <section className="admin-panel">
-            <div className="admin-toolbar">
-              <input className="admin-input" placeholder="Tìm câu hỏi hoặc câu trả lời…" value={query} onChange={(e) => setQuery(e.target.value)} />
-              <select className="admin-select" value={filter} onChange={(e) => setFilter(e.target.value)}>
-                <option value="all">Tất cả</option><option value="pending">Chờ duyệt</option><option value="verified">Đã duyệt</option>
-              </select>
-            </div>
-            <div className="admin-table-wrap">
-              <table className="admin-table">
-                <thead><tr><th>Trạng thái</th><th>Câu hỏi</th><th>Câu trả lời</th><th>Thao tác</th></tr></thead>
-                <tbody>
-                  {visibleItems.map((item) => (
-                    <tr key={item.id}>
-                      <td><span className={`admin-status ${item.verified ? "ok" : "warn"}`}>{item.verified ? "Verified" : "Pending"}</span></td>
-                      <td><strong>{item.question}</strong><div style={{ color: "var(--admin-muted)", fontSize: 12, marginTop: 6 }}>{item.hits || 0} lượt dùng</div></td>
-                      <td className="admin-answer-cell">{item.answer}</td>
-                      <td><div style={{ display: "grid", gap: 7 }}>
-                        {!item.verified && <button className="admin-primary" disabled={Boolean(busyId)} onClick={() => updateItem(item, "approve")}>Duyệt</button>}
-                        {item.verified && item.store !== "knowledge" && <button className="admin-ghost" disabled={Boolean(busyId)} onClick={() => updateItem(item, "promote")}>Promote</button>}
-                        <button className="admin-danger-btn" disabled={Boolean(busyId)} onClick={() => updateItem(item, "delete")}>Xóa</button>
-                      </div></td>
-                    </tr>
-                  ))}
-                  {!visibleItems.length && <tr><td colSpan="4" className="admin-empty">Không có dữ liệu phù hợp.</td></tr>}
-                </tbody>
-              </table>
-            </div>
+            <KnowledgeTable items={items} query={query} setQuery={setQuery} filter={filter} setFilter={setFilter} busyId={busyId} updateItem={updateItem} />
           </section>
         )}
 

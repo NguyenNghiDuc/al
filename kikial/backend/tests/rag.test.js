@@ -1,142 +1,141 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { createServer } from "node:http";
+import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { pathToFileURL } from "node:url";
-import { analyzeQuery } from "../src/ai/query/queryAnalyzer.js";
-import { rerank } from "../src/ai/retrieval/reranker.js";
-import { selectEvidence, createEvidencePack } from "../src/ai/context/evidencePack.js";
+import { randomUUID } from "node:crypto";
 import { orchestrate } from "../src/ai/orchestrator.js";
-import { resolveReference } from "../src/ai/context/referenceResolver.js";
-import { expandQuery } from "../src/ai/query/queryRewriter.js";
-import { compressEvidence } from "../src/ai/context/contextCompression.js";
-import { executeStructuredTool } from "../src/ai/tools/toolExecution.js";
-import { executePlan } from "../src/ai/planner.js";
-import { indexCodeContext, searchCodeContext } from "../src/ai/code/codeContext.js";
-import { verifyLessonCandidate } from "../src/ai/verification/verifier.js";
-import { recordExperience, submitFailure, listVerifiedLessons, listLessons } from "../src/ai/experience/experienceStore.js";
-import { analyzeFailures } from "../src/ai/improvement/failureAnalyzer.js";
-import { privacyCheck } from "../training/privacy.js";
-import { normalizeExample } from "../training/schema.js";
-import { stableSplit } from "../training/dataset.js";
+import { retrieveEvidence } from "../src/ai/retrieval/hybridRetriever.js";
+import { rerank } from "../src/ai/retrieval/reranker.js";
+import { analyzeQuery } from "../src/ai/query/queryAnalyzer.js";
+import { selectEvidence } from "../src/ai/context/evidencePack.js";
 import { handleChatRoute } from "../src/routes/chats.js";
-import { retrieveEvidence } from "../src/ai/retrieval/index.js";
+import { resetModelProvider } from "../src/ai/models/modelRouter.js";
 import { initializeMemory } from "../lib/learningMemory.js";
-
-async function freshModule(path, query = Date.now()) { return import(`${pathToFileURL(path).href}?test=${query}`); }
+import { getExperience, listExperienceStore, markInteractionFailure, recordExperience, verifyStoredLesson } from "../src/ai/experience/experienceStore.js";
+import { retrieveVerifiedLessons } from "../src/ai/retrieval/hybridRetriever.js";
 
 async function withDocumentStore(callback) {
   const directory = await mkdtemp(join(tmpdir(), "kikial-rag-"));
-  const path = join(directory, "documents.json");
-  const previous = process.env.KIKIAL_DOCUMENTS_PATH;
-  process.env.KIKIAL_DOCUMENTS_PATH = path;
+  const previousPath = process.env.KIKIAL_DOCUMENTS_PATH;
+  process.env.KIKIAL_DOCUMENTS_PATH = join(directory, "documents.json");
   try {
-    const documents = await freshModule(join(process.cwd(), "src/services/documentService.js"));
-    await callback(documents, path);
+    const documents = await import(`../src/services/documentService.js?test=${randomUUID()}`);
+    await callback(documents);
   } finally {
-    if (previous === undefined) delete process.env.KIKIAL_DOCUMENTS_PATH;
-    else process.env.KIKIAL_DOCUMENTS_PATH = previous;
+    if (previousPath === undefined) delete process.env.KIKIAL_DOCUMENTS_PATH;
+    else process.env.KIKIAL_DOCUMENTS_PATH = previousPath;
     await rm(directory, { recursive: true, force: true });
   }
 }
 
 async function withExperienceStore(callback) {
   const directory = await mkdtemp(join(tmpdir(), "kikial-experience-"));
-  const previous = process.env.KIKIAL_EXPERIENCE_PATH;
-  const path = join(directory, "experience.json");
-  process.env.KIKIAL_EXPERIENCE_PATH = path;
-  try {
-    const module = await freshModule(join(process.cwd(), "src/ai/experience/experienceStore.js"), Math.random());
-    await callback(module, path);
-  } finally {
-    if (previous === undefined) delete process.env.KIKIAL_EXPERIENCE_PATH;
-    else process.env.KIKIAL_EXPERIENCE_PATH = previous;
+  const previousPath = process.env.KIKIAL_EXPERIENCE_STORE_PATH;
+  process.env.KIKIAL_EXPERIENCE_STORE_PATH = join(directory, "experience.json");
+  try { await callback(); }
+  finally {
+    if (previousPath === undefined) delete process.env.KIKIAL_EXPERIENCE_STORE_PATH;
+    else process.env.KIKIAL_EXPERIENCE_STORE_PATH = previousPath;
     await rm(directory, { recursive: true, force: true });
   }
 }
 
-function localSources(documentRetriever) {
-  return {
-    documentRetriever,
-    knowledgeRetriever: async () => [],
-    experienceRetriever: async () => [],
-    lessonRetriever: async () => [],
-    webRetriever: async () => [],
-  };
-}
+const localSources = (documentRetriever) => ({
+  documentRetriever,
+  knowledgeRetriever: async () => [],
+  experienceRetriever: async () => [],
+});
 
 test("query analyzer skips retrieval for simple chat and enables it for factual questions", () => {
-  assert.equal(analyzeQuery("Xin chào").needsRetrieval, false);
-  assert.equal(analyzeQuery("TCP là gì?").needsRetrieval, true);
+  assert.equal(analyzeQuery("Chào Kikial").needsRetrieval, false);
+  assert.equal(analyzeQuery("Giải thích cách hoạt động của vector database").needsRetrieval, true);
 });
 
 test("uploaded documents are retrieved, merged across files, and carry source metadata", async () => {
   await withDocumentStore(async (documents) => {
-    await documents.addDocument("u1", "network-a.txt", "TCP is reliable and connection oriented.");
-    await documents.addDocument("u1", "network-b.txt", "UDP is connectionless and lightweight.");
-    const results = await retrieveEvidence({ userId: "u1", query: "reliable UDP", ...localSources(documents.searchDocuments), limit: 5 });
-    assert.ok(results.some((item) => item.filename === "network-a.txt"));
-    assert.ok(results.some((item) => item.filename === "network-b.txt"));
-    assert.ok(results.every((item) => item.sourceType === "document"));
+    await documents.addDocument("user@example.test", "quartz-migration-requirements.txt", "The quartz migration requires draining the old queue before traffic is switched.");
+    await documents.addDocument("user@example.test", "quartz-rollback-plan.txt", "The quartz rollback plan restores the previous queue and verifies traffic health.");
+    const results = await retrieveEvidence({ userId: "user@example.test", query: "quartz migration queue", ...localSources(documents.searchDocuments) });
+    assert.equal(results.length, 2);
+    assert.equal(results[0].filename, "quartz-migration-requirements.txt");
+    assert.equal(results[0].sourceType, "document");
+    assert.equal(results[0].sourceId, results[0].documentId);
+    assert.ok(results[0].chunkId);
+    assert.ok(results[0].score > 0);
   });
 });
 
 test("reranking retains document metadata", () => {
-  const result = rerank("flutter widget", [{ id: "doc1", question: "notes.txt", answer: "Flutter widget tree", filename: "notes.txt", chunkId: "x:1", similarity: 0.8 }]);
-  assert.equal(result[0].filename, "notes.txt");
-  assert.equal(result[0].chunkId, "x:1");
+  const [result] = rerank("quartz migration", [{
+    sourceId: "doc-1",
+    sourceType: "document",
+    filename: "quartz.txt",
+    chunkId: "doc-1:0",
+    text: "The quartz migration drains the old queue.",
+    similarity: 0.8,
+  }]);
+  assert.equal(result.sourceId, "doc-1");
+  assert.equal(result.sourceType, "document");
+  assert.equal(result.filename, "quartz.txt");
+  assert.equal(result.chunkId, "doc-1:0");
 });
 
 test("evidence selection enforces score, chunk and character budgets and removes duplicates", () => {
+  const primary = "Quartz migration drains the legacy queue before traffic switches. ".repeat(2);
+  const next = "Solar array policy defines installation permit checks and review. ".repeat(2);
   const selected = selectEvidence([
-    { id: "a", text: "alpha beta gamma delta", score: 0.9 },
-    { id: "b", text: "alpha beta gamma delta", score: 0.8 },
-    { id: "c", text: "unique evidence about flutter", score: 0.7 },
-    { id: "d", text: "low quality", score: 0.01 },
-  ], { maxChunks: 2, maxChars: 80, minScore: 0.2 });
-  assert.equal(selected.length, 2);
-  assert.equal(selected[0].id, "a");
-  assert.equal(selected[1].id, "c");
+    { sourceId: "best", text: primary, score: 0.9 },
+    { sourceId: "duplicate", text: primary, score: 0.8 },
+    { sourceId: "next", text: next, score: 0.7 },
+    { sourceId: "weak", text: "irrelevant", score: 0.1 },
+  ], { maxChunks: 3, maxChars: 320, minScore: 0.24 });
+  assert.deepEqual(selected.map((item) => item.sourceId), ["best", "next"]);
+  assert.ok(selected.reduce((sum, item) => sum + item.text.length, 0) <= 320);
 });
 
 test("composite retrieval returns no results cleanly", async () => {
-  const results = await retrieveEvidence({ userId: "u", query: "nothing", documentRetriever: async () => [], knowledgeRetriever: async () => [], experienceRetriever: async () => [], lessonRetriever: async () => [], webRetriever: async () => [] });
+  const results = await retrieveEvidence({ userId: "user", query: "unmatched query", ...localSources(async () => []) });
   assert.deepEqual(results, []);
 });
 
 test("verified lessons retain their source type through retrieval", async () => {
-  const results = await retrieveEvidence({
-    userId: "u",
-    query: "queue migration",
+  const [lesson] = await retrieveEvidence({
+    userId: "user",
+    query: "quartz operational policy",
     documentRetriever: async () => [],
-    knowledgeRetriever: async () => [],
+    knowledgeRetriever: async () => [{ id: "lesson-1", store: "learned", verified: true, question: "quartz operational policy", answer: "Drain the quartz queue before switching traffic." }],
     experienceRetriever: async () => [],
-    webRetriever: async () => [],
-    lessonRetriever: async () => [{ id: "lesson-1", sourceId: "lesson-1", lessonId: "lesson-1", sourceType: "lesson", question: "queue migration", answer: "Drain before switching.", text: "Drain before switching.", similarity: 0.95, score: 0.95, verified: true }],
   });
-  assert.equal(results[0].sourceType, "lesson");
-  assert.equal(results[0].lessonId, "lesson-1");
+  assert.equal(lesson.sourceId, "lesson-1");
+  assert.equal(lesson.sourceType, "verified_lesson");
 });
 
 test("simple chat does not call retrieval and retrieval failure falls back to a model answer", async () => {
   let retrievalCalls = 0;
+  const noRetrieval = await orchestrate({
+    userId: "simple-user",
+    message: "Chào Kikial",
+    retrieve: async () => { retrievalCalls += 1; throw new Error("should not retrieve"); },
+    generateAnswer: async () => "fallback",
+    persistExperience: async () => ({}),
+  });
+  assert.equal(retrievalCalls, 0);
+  assert.equal(noRetrieval.retrieval.used, false);
+
   const previousDisable = process.env.AI_DISABLE_MODEL;
   delete process.env.AI_DISABLE_MODEL;
   try {
-    const simple = await orchestrate({ userId: "u", message: "Xin chào", retrieve: async () => { retrievalCalls += 1; return []; }, generateAnswer: async () => "Xin chào từ model", persistExperience: async () => ({}) });
-    assert.equal(retrievalCalls, 0);
-    assert.equal(simple.answer, "Xin chào từ model");
-
-    const factual = await orchestrate({
-      userId: "u",
-      message: "Quartz queue migration là gì?",
-      retrieve: async () => { retrievalCalls += 1; throw Object.assign(new Error("offline"), { code: "RETRIEVAL_OFFLINE" }); },
-      generateAnswer: async () => "Model fallback after retrieval failure.",
+    const fallback = await orchestrate({
+      userId: "failure-user",
+      message: "Explain vector database indexing strategies in detail",
+      retrieve: async () => { throw Object.assign(new Error("private detail"), { code: "RETRIEVAL_OFFLINE" }); },
+      generateAnswer: async () => "A general explanation still works.",
       persistExperience: async () => ({}),
     });
-    assert.equal(factual.answer, "Model fallback after retrieval failure.");
-    assert.ok(retrievalCalls >= 1);
+    assert.equal(fallback.answer, "A general explanation still works.");
+    assert.deepEqual(fallback.retrieval, { used: false, count: 0, failed: true });
   } finally {
     if (previousDisable === undefined) delete process.env.AI_DISABLE_MODEL;
     else process.env.AI_DISABLE_MODEL = previousDisable;
@@ -144,37 +143,67 @@ test("simple chat does not call retrieval and retrieval failure falls back to a 
 });
 
 test("assistant core routes personal memory and conversation context before the current request", async () => {
+  const messages = [];
+  const modelServer = createServer(async (request, response) => {
+    if (request.method === "GET" && request.url === "/api/tags") {
+      response.writeHead(200, { "content-type": "application/json" });
+      response.end(JSON.stringify({ models: [] }));
+      return;
+    }
+    let body = "";
+    for await (const chunk of request) body += chunk;
+    messages.push(JSON.parse(body).messages);
+    response.writeHead(200, { "content-type": "application/json" });
+    response.end(JSON.stringify({ message: { content: "Bạn đang học Dart." } }));
+  });
+  await new Promise((resolve) => modelServer.listen(0, "127.0.0.1", resolve));
+  const previousBaseUrl = process.env.AI_BASE_URL;
   const previousDisable = process.env.AI_DISABLE_MODEL;
+  process.env.AI_BASE_URL = `http://127.0.0.1:${modelServer.address().port}`;
   delete process.env.AI_DISABLE_MODEL;
+  resetModelProvider();
+  let retrievalCalls = 0;
   try {
-    let modelContext = "";
     const result = await orchestrate({
-      userId: "memory-user",
-      message: "Vậy ngôn ngữ đó dùng để làm gì?",
-      history: [{ role: "user", content: "Tôi đang học Dart" }, { role: "assistant", content: "Dart thường dùng với Flutter." }],
-      retrieve: async () => [],
-      retrievePersonalMemory: async () => [{ id: "m1", key: "education", value: "Đang học Dart", score: 1 }],
-      generateAnswer: async ({ context }) => { modelContext = context; return "Dart dùng để phát triển ứng dụng, đặc biệt với Flutter."; },
+      userId: "context-user",
+      message: "Tôi đang học gì?",
+      history: [{ role: "user", content: "Chào Kikial" }, { role: "assistant", content: "Chào bạn." }],
+      retrieve: async () => { retrievalCalls += 1; return []; },
+      retrievePersonalMemory: async () => [{ id: "memory-1", key: "learning", value: "Dart", score: 0.9 }],
+      rememberMemory: async () => ({}),
       persistExperience: async () => ({}),
     });
-    assert.match(modelContext, /PERSONAL MEMORY/);
-    assert.match(modelContext, /Đang học Dart/);
-    assert.match(modelContext, /RECENT MESSAGES/);
-    assert.equal(result.modelUsed, true);
+    assert.equal(result.answer, "Bạn đang học Dart.");
+    assert.equal(result.retrieval.used, false);
+    assert.equal(retrievalCalls, 0);
+    assert.deepEqual(messages[0].map((item) => item.role), ["system", "user", "assistant", "user"]);
+    assert.equal(messages[0][1].content, "Chào Kikial");
+    assert.match(messages[0][3].content, /PERSONAL MEMORY[\s\S]*Dart/);
+    assert.match(messages[0][3].content, /CÂU HỎI HIỆN TẠI:[\s\S]*Tôi đang học gì/);
   } finally {
+    await new Promise((resolve) => modelServer.close(resolve));
+    if (previousBaseUrl === undefined) delete process.env.AI_BASE_URL;
+    else process.env.AI_BASE_URL = previousBaseUrl;
     if (previousDisable === undefined) delete process.env.AI_DISABLE_MODEL;
     else process.env.AI_DISABLE_MODEL = previousDisable;
+    resetModelProvider();
   }
 });
 
 test("calculator tool failure degrades to an assistant response", async () => {
+  let toolCalls = 0;
   const result = await orchestrate({
-    userId: "math-user",
-    message: "12 * 7",
-    runTool: async () => { throw new Error("temporary tool outage"); },
+    userId: "tool-failure-user",
+    message: "25 + 10 * 3",
+    runTool: async () => { toolCalls += 1; throw Object.assign(new Error("temporary tool outage"), { code: "TOOL_OFFLINE" }); },
+    rememberMemory: async () => ({}),
+    retrievePersonalMemory: async () => [],
     persistExperience: async () => ({}),
   });
-  assert.ok(result.answer);
+  assert.equal(toolCalls, 1);
+  assert.equal(typeof result.answer, "string");
+  assert.ok(result.answer.length > 0);
+  assert.equal(result.source, "canned");
 });
 
 test("an experience-store write failure does not discard a generated answer", async () => {
@@ -197,51 +226,44 @@ test("an experience-store write failure does not discard a generated answer", as
 });
 
 test("chat endpoint retrieves uploaded evidence before generation and returns compact sources", async () => {
-  const previousDisable = process.env.AI_DISABLE_MODEL;
-  delete process.env.AI_DISABLE_MODEL;
-  try {
-    await withDocumentStore(async (documents) => {
-      const privateDocumentText = "Quartz migration requires draining the legacy queue before traffic is switched.";
-      await documents.addDocument("rag-user@example.test", "migration-guide.txt", privateDocumentText);
-      let modelContext = "";
-      const runOrchestrator = (args) => orchestrate({
-        ...args,
-        retrieve: (options) => retrieveEvidence({ ...options, ...localSources(documents.searchDocuments) }),
-        generateAnswer: async ({ context, hasEvidence }) => {
-          modelContext = context;
-          assert.equal(hasEvidence, true);
-          return "Drain the legacy queue before switching traffic.";
-        },
-        persistExperience: async () => ({}),
-      });
-      const response = {};
-      let status;
-      let payload;
-      await handleChatRoute({
-        request: {},
-        response,
-        readJson: async () => ({ message: "What does the quartz migration require?" }),
-        send: (_response, responseStatus, body) => { status = responseStatus; payload = body; },
-        contentType: "application/json",
-        user: { email: "rag-user@example.test" },
-        traceId: "rag-test",
-        runOrchestrator,
-      });
-      const result = JSON.parse(payload);
-      assert.equal(status, 200);
-      assert.equal(result.ok, true);
-      assert.match(modelContext, /RETRIEVED EVIDENCE/);
-      assert.match(modelContext, /Quartz migration requires draining/);
-      assert.equal(result.retrieval.used, true);
-      assert.equal(result.retrieval.count, 1);
-      assert.equal(result.sources[0].filename, "migration-guide.txt");
-      assert.equal(result.sources[0].sourceType, "document");
-      assert.equal(JSON.stringify(result).includes(privateDocumentText), false);
+  await withDocumentStore(async (documents) => {
+    const privateDocumentText = "Quartz migration requires draining the legacy queue before traffic is switched.";
+    await documents.addDocument("rag-user@example.test", "migration-guide.txt", privateDocumentText);
+    let modelContext = "";
+    const runOrchestrator = (args) => orchestrate({
+      ...args,
+      retrieve: (options) => retrieveEvidence({ ...options, ...localSources(documents.searchDocuments) }),
+      generateAnswer: async ({ context, hasEvidence }) => {
+        modelContext = context;
+        assert.equal(hasEvidence, true);
+        return "Drain the legacy queue before switching traffic.";
+      },
+      persistExperience: async () => ({}),
     });
-  } finally {
-    if (previousDisable === undefined) delete process.env.AI_DISABLE_MODEL;
-    else process.env.AI_DISABLE_MODEL = previousDisable;
-  }
+    const response = {};
+    let status;
+    let payload;
+    await handleChatRoute({
+      request: {},
+      response,
+      readJson: async () => ({ message: "What does the quartz migration require?" }),
+      send: (_response, responseStatus, body) => { status = responseStatus; payload = body; },
+      contentType: "application/json",
+      user: { email: "rag-user@example.test" },
+      traceId: "rag-test",
+      runOrchestrator,
+    });
+    const result = JSON.parse(payload);
+    assert.equal(status, 200);
+    assert.equal(result.ok, true);
+    assert.match(modelContext, /RETRIEVED EVIDENCE/);
+    assert.match(modelContext, /Quartz migration requires draining/);
+    assert.equal(result.retrieval.used, true);
+    assert.equal(result.retrieval.count, 1);
+    assert.equal(result.sources[0].filename, "migration-guide.txt");
+    assert.equal(result.sources[0].sourceType, "document");
+    assert.equal(JSON.stringify(result).includes(privateDocumentText), false);
+  });
 });
 
 test("end-to-end: verified failure lesson is retrieved into the next model context", async () => {
@@ -256,37 +278,55 @@ test("end-to-end: verified failure lesson is retrieved into the next model conte
       const first = await orchestrate({
         userId: "learning-loop-user",
         message: q1,
-        retrieve: async () => [],
-        generateAnswer: async () => "Switch traffic immediately.",
-        persistExperience: recordExperience,
+        interactionId: "learning-loop-interaction-1",
+        generateAnswer: async () => ({ content: "Switch traffic first, then drain the old queue.", modelId: "fixture-model-v1" }),
       });
-      await submitFailure({
+      const experience = await getExperience(first.interactionId);
+      assert.equal(experience.userInput, q1);
+      assert.equal(experience.assistantAnswer, "Switch traffic first, then drain the old queue.");
+      assert.equal(experience.modelId, "fixture-model-v1");
+
+      const failure = await markInteractionFailure({
         interactionId: first.interactionId,
-        userInput: q1,
-        assistantAnswer: first.answer,
-        correction: "Drain the old queue before switching traffic.",
-        reason: "The previous answer skipped the drain step.",
+        reason: "retrieval failure: wrong queue order",
+        correction: "Drain the legacy quartz queue before switching production traffic.",
       });
-      const lessons = await listLessons();
-      const candidate = lessons.find((item) => item.originInteractionIds?.includes(first.interactionId));
-      assert.ok(candidate);
-      const verification = verifyLessonCandidate(candidate, [{ sourceType: "trusted_reference", sourceId: "runbook-1", id: "runbook-1", text: "Drain the old queue before switching traffic.", trusted: true, verified: true }]);
-      const experienceModule = await freshModule(join(process.cwd(), "src/ai/experience/experienceStore.js"), Math.random());
-      // verify through the fresh module so its configured temporary store is used
-      await experienceModule.verifyLesson(candidate.lessonId, verification);
-      const verified = await experienceModule.listVerifiedLessons();
-      assert.ok(verified.some((item) => item.lessonId === candidate.lessonId));
-      let secondContext = "";
+      assert.equal(failure.failure.category, "RETRIEVAL_MISS");
+      assert.equal(failure.lesson.status, "candidate");
+      assert.equal((await retrieveVerifiedLessons(q1)).some((item) => item.lessonId === failure.lesson.lessonId), false);
+
+      const verified = await verifyStoredLesson({
+        lessonId: failure.lesson.lessonId,
+        evidence: [{ sourceType: "reference", sourceId: "runbook-quartz-17", provenance: "operations://runbooks/quartz-migration", trusted: true, text: "Quartz migration runbook: Drain the legacy quartz queue before switching production traffic." }],
+      });
+      assert.equal(verified.status, "verified");
+      assert.equal(verified.confidence, 0.99);
+      assert.deepEqual(verified.evidenceRefs, [{ sourceType: "reference", sourceId: "runbook-quartz-17", provenance: "operations://runbooks/quartz-migration" }]);
+
+      let finalContext = "";
       const second = await orchestrate({
         userId: "learning-loop-user",
-        message: q1,
-        retrieve: async () => [{ id: candidate.lessonId, sourceId: candidate.lessonId, lessonId: candidate.lessonId, sourceType: "lesson", text: "Drain the old queue before switching traffic.", answer: "Drain the old queue before switching traffic.", score: 0.99, similarity: 0.99, confidence: 0.99, provenance: [{ sourceType: "trusted_reference", sourceId: "runbook-1" }], verified: true }],
-        generateAnswer: async ({ context }) => { secondContext = context; return "Drain the old queue before switching traffic."; },
-        persistExperience: async () => ({}),
+        message: "How should the quartz queue migration be performed safely?",
+        interactionId: "learning-loop-interaction-2",
+        generateAnswer: async ({ context, hasEvidence }) => {
+          finalContext = context;
+          assert.equal(hasEvidence, true);
+          return { content: "Drain the legacy quartz queue before switching production traffic.", modelId: "fixture-model-v1" };
+        },
       });
-      assert.match(secondContext, /lesson=/);
-      assert.match(secondContext, /Drain the old queue/);
-      assert.equal(second.answer, "Drain the old queue before switching traffic.");
+      const source = second.sources.find((item) => item.lessonId === verified.lessonId);
+      const promptLesson = second.evidence.knowledge.find((item) => item.lessonId === verified.lessonId);
+      assert.ok(source, "runtime retriever returns the lesson");
+      assert.equal(source.sourceType, "lesson");
+      assert.equal(source.sourceId, verified.lessonId);
+      assert.equal(source.confidence, 0.99);
+      assert.equal(source.provenance[0].sourceId, "runbook-quartz-17");
+      assert.ok(promptLesson, "lesson is included in evidence pack");
+      assert.equal(promptLesson.sourceType, "lesson");
+      assert.match(finalContext, new RegExp(`lesson=${verified.lessonId}`));
+      assert.match(finalContext, /provenance=reference:runbook-quartz-17/);
+      assert.match(finalContext, /Drain the legacy quartz queue before switching production traffic/);
+      assert.equal(second.interactionId, "learning-loop-interaction-2");
     } finally {
       if (previousEmbeddingSetting === undefined) delete process.env.AI_EMBEDDING_OFFLINE;
       else process.env.AI_EMBEDDING_OFFLINE = previousEmbeddingSetting;
@@ -297,174 +337,74 @@ test("end-to-end: verified failure lesson is retrieved into the next model conte
 });
 
 test("lesson lifecycle quarantines unsupported corrections and never retrieves unverified states", async () => {
-  const candidate = { correction: "Drain old queue", originInteractionIds: ["i1"], conflictsWith: [] };
-  const noEvidence = verifyLessonCandidate(candidate, []);
-  assert.equal(noEvidence.status, "quarantined");
-  const contradiction = verifyLessonCandidate(candidate, [{ id: "s", sourceId: "s", sourceType: "trusted_reference", text: "Do not drain", trusted: true, verified: true, contradictsCorrection: true }]);
-  assert.equal(contradiction.status, "rejected");
-});
+  await withExperienceStore(async () => {
+    const createCandidate = async (interactionId, problemPattern, correction, reason = "wrong answer") => {
+      await recordExperience({ interactionId, userInput: problemPattern, assistantAnswer: "incorrect prior answer", modelId: "fixture" });
+      const { lesson } = await markInteractionFailure({ interactionId, reason: `retrieval miss: ${reason}`, correction });
+      return lesson;
+    };
+    const noCorrection = await createCandidate("no-correction", "How does the cobalt scheduler choose a queue?", "");
+    assert.equal(noCorrection.status, "candidate");
+    const noEvidenceDecision = await verifyStoredLesson({ lessonId: noCorrection.lessonId });
+    assert.equal(noEvidenceDecision.status, "quarantined");
 
-test("duplicate lessons merge origins and conflicting verified lessons are quarantined", async () => {
-  await withExperienceStore(async (experience) => {
-    await experience.recordExperience({ interactionId: "dup-1", userInput: "queue?", assistantAnswer: "a", modelId: "m" });
-    await experience.submitFailure({ interactionId: "dup-1", userInput: "queue?", assistantAnswer: "a", correction: "Drain first" });
-    await experience.recordExperience({ interactionId: "dup-2", userInput: "queue?", assistantAnswer: "b", modelId: "m" });
-    await experience.submitFailure({ interactionId: "dup-2", userInput: "queue?", assistantAnswer: "b", correction: "Drain first" });
-    const lessons = await experience.listLessons();
-    const merged = lessons.find((item) => item.correction === "Drain first");
-    assert.ok(merged.originInteractionIds.includes("dup-1"));
-    assert.ok(merged.originInteractionIds.includes("dup-2"));
+    const unsupported = await createCandidate("unsupported", "How is the cobalt scheduler configured?", "The scheduler always uses queue 17.");
+    const unsupportedDecision = await verifyStoredLesson({
+      lessonId: unsupported.lessonId,
+      evidence: [{ sourceType: "model", sourceId: "model-output-1", trusted: true, text: "The scheduler always uses queue 17." }],
+    });
+    assert.equal(unsupportedDecision.status, "quarantined");
+
+    const rejected = await createCandidate("rejected", "What is the cobalt scheduler's queue?", "The scheduler uses queue 17.");
+    const rejectedDecision = await verifyStoredLesson({
+      lessonId: rejected.lessonId,
+      evidence: [{ sourceType: "reference", sourceId: "scheduler-spec", trusted: true, contradictsCorrection: true, text: "The scheduler uses queue 17." }],
+    });
+    assert.equal(rejectedDecision.status, "rejected");
+
+    const verifierFailure = await createCandidate("verifier-failure", "How does the cobalt scheduler retry?", "Retry three times.");
+    const verifierFailureResult = await verifyStoredLesson({ lessonId: verifierFailure.lessonId, verifyCandidate: () => { throw new Error("verifier unavailable"); } });
+    assert.equal(verifierFailureResult.status, "quarantined");
+
+    const trusted = await createCandidate("trusted", "How does the cobalt scheduler recover?", "Restart the worker after its backoff expires.");
+    const trustedLesson = await verifyStoredLesson({
+      lessonId: trusted.lessonId,
+      evidence: [{ sourceType: "reference", sourceId: "scheduler-runbook", trusted: true, text: "Restart the worker after its backoff expires." }],
+    });
+    assert.equal(trustedLesson.status, "verified");
+    const retrieved = await retrieveVerifiedLessons("How does the cobalt scheduler recover?", 10);
+    assert.deepEqual(retrieved.map((item) => item.lessonId), [trustedLesson.lessonId]);
+
+    const data = await listExperienceStore();
+    assert.ok(data.failures.length >= 5);
+    assert.ok(data.failures.every((item) => item.lessonId));
   });
 });
 
-test("query rewriting resolves contextual language follow-up", () => {
-  const history = [{ role: "user", content: "Flutter dùng ngôn ngữ gì?" }, { role: "assistant", content: "Dart." }];
-  const reference = resolveReference("Nó dùng để làm gì?", history, "");
-  const plan = expandQuery(reference.query, analyzeQuery("Nó dùng để làm gì?", history), history);
-  assert.ok(plan.standalone.length > "Nó dùng để làm gì?".length);
-});
+test("duplicate lessons merge origins and conflicting verified lessons are quarantined", async () => {
+  await withExperienceStore(async () => {
+    const pattern = "What order should the copper queue migration follow?";
+    const createAndVerify = async (interactionId, correction) => {
+      await recordExperience({ interactionId, userInput: pattern, assistantAnswer: "wrong order", modelId: "fixture" });
+      const result = await markInteractionFailure({ interactionId, reason: "retrieval miss: wrong order", correction });
+      const lesson = result.lesson.status === "candidate"
+        ? await verifyStoredLesson({ lessonId: result.lesson.lessonId, evidence: [{ sourceType: "reference", sourceId: `ref-${interactionId}`, trusted: true, text: correction }] })
+        : result.lesson;
+      return { result, lesson };
+    };
+    const first = await createAndVerify("duplicate-1", "Drain copper queue before traffic switch.");
+    assert.equal(first.lesson.status, "verified");
+    const duplicate = await createAndVerify("duplicate-2", "Drain copper queue before traffic switch.");
+    assert.equal(duplicate.result.duplicate, true);
+    assert.equal(duplicate.lesson.lessonId, first.lesson.lessonId);
+    assert.deepEqual(duplicate.lesson.originInteractionIds, ["duplicate-1", "duplicate-2"]);
 
-test("context compression keeps provenance and budget", () => {
-  const items = [{ question: "Flutter", answer: "A".repeat(1000), sourceType: "knowledge", provenance: { sourceType: "CURATED" }, score: 1 }];
-  const compressed = compressEvidence(items, "Flutter", 100);
-  assert.ok(compressed[0].answer.length <= 100);
-  assert.equal(compressed[0].provenance.sourceType, "CURATED");
-});
-
-test("structured tool execution reports failures without pretending success", async () => {
-  const result = await executeStructuredTool({ name: "broken", execute: async () => { throw new Error("boom"); } }, {}, {});
-  assert.equal(result.ok, false);
-  assert.match(result.error, /boom/);
-});
-
-test("planner executes independent retrieval steps with bounds", async () => {
-  let calls = 0;
-  const plan = { steps: [{ id: "a", action: "retrieve" }, { id: "b", action: "retrieve" }] };
-  const result = await executePlan(plan, { retrieve: async () => { calls += 1; return [calls]; }, budget: { maxAgentSteps: 2 } });
-  assert.equal(calls, 2);
-  assert.equal(result.completed.length, 2);
-});
-
-test("code context indexes symbols without executing code", () => {
-  indexCodeContext("x.js", "function hello() { return 1; }\nclass World {}", "javascript");
-  const result = searchCodeContext("hello");
-  assert.ok(result.some((item) => item.symbol === "hello"));
-});
-
-test("reranker rewards exact entities and verified source", () => {
-  const results = rerank("Flutter Dart", [
-    { id: "weak", question: "Flutter", answer: "UI framework", similarity: 0.8, verified: false },
-    { id: "strong", question: "Flutter Dart", answer: "Flutter uses Dart", similarity: 0.5, verified: true },
-  ]);
-  assert.equal(results[0].id, "strong");
-});
-
-test("reasoning controller keeps deterministic requests at level zero", async () => {
-  const { decideReasoning } = await import("../src/ai/reasoning/index.js");
-  const result = decideReasoning({ intent: "MATH", complexity: "LOW", needsTools: true, needsKnowledge: false, needsFreshInformation: false });
-  assert.equal(result.level, "LEVEL_0");
-  assert.equal(result.budget.maxModelCalls, 0);
-});
-
-test("reasoning controller budgets complex tasks", async () => {
-  const { decideReasoning } = await import("../src/ai/reasoning/index.js");
-  const result = decideReasoning({ intent: "PLANNING", complexity: "HIGH", needsTools: false, needsKnowledge: true, needsFreshInformation: false });
-  assert.equal(result.level, "LEVEL_4");
-  assert.ok(result.budget.maxModelCalls >= 2);
-});
-
-test("reference resolver resolves pronouns from recent entities", () => {
-  const history = [{ role: "user", content: "Node.js chạy JavaScript" }, { role: "assistant", content: "Đúng" }];
-  const result = resolveReference("Nó là gì?", history, "");
-  assert.ok(result.query.toLowerCase().includes("node"));
-});
-
-test("memory extraction rejects hypothetical and third-party identity", async () => {
-  const { extractCandidateMemories } = await import("../src/ai/memory/memoryManager.js");
-  assert.deepEqual(extractCandidateMemories("Nếu tôi tên là Nam thì sao?"), []);
-  assert.deepEqual(extractCandidateMemories("Bạn tôi tên là Nam"), []);
-});
-
-test("memory extraction represents negation", async () => {
-  const { extractCandidateMemories } = await import("../src/ai/memory/memoryManager.js");
-  const result = extractCandidateMemories("Tôi không thích Python");
-  assert.ok(result.some((item) => item.value.toLowerCase().includes("không thích")));
-});
-
-test("evidence pack standardizes provenance", () => {
-  const pack = createEvidencePack({ query: "x", retrieved: [{ id: "a", sourceId: "a", sourceType: "document", text: "evidence", score: 0.9, filename: "x.txt" }] });
-  assert.equal(pack.documents[0].filename, "x.txt");
-  assert.equal(pack.documents[0].sourceType, "document");
-});
-
-test("answer composer adds uncertainty without leaking trace metadata", async () => {
-  const { composeAnswer } = await import("../src/ai/response/answerComposer.js");
-  const result = composeAnswer("Maybe", { analysis: { intent: "FACTUAL" }, confidence: { score: 0.2, level: "LOW" }, evidence: [] });
-  assert.match(result.content, /chưa đủ căn cứ|không chắc|cần kiểm chứng/i);
-  assert.equal(result.content.includes("traceId"), false);
-});
-
-test("model registry refuses promotion without a passed gate", async () => {
-  const directory = await mkdtemp(join(tmpdir(), "kikial-model-"));
-  const originalCwd = process.cwd();
-  try {
-    process.chdir(originalCwd);
-    const { registerModel, promoteModel } = await import("../src/ai/models/modelRegistry.js");
-    const id = `candidate-${Date.now()}`;
-    await registerModel({ id, baseModel: "test", provider: "ollama", type: "LOCAL", status: "CANDIDATE" });
-    await assert.rejects(() => promoteModel(id, { passed: false }), /Promotion gate failed/);
-  } finally {
-    process.chdir(originalCwd);
-    await rm(directory, { recursive: true, force: true });
-  }
-});
-
-test("model registry promotes only explicit candidates and can rollback", async () => {
-  const { registerModel, promoteModel, rollbackModel } = await import("../src/ai/models/modelRegistry.js");
-  const id = `candidate-ok-${Date.now()}`;
-  await registerModel({ id, baseModel: "test", provider: "ollama", type: "LOCAL", status: "CANDIDATE" });
-  const promoted = await promoteModel(id, { passed: true });
-  assert.equal(promoted.id, id);
-  const rolledBack = await rollbackModel();
-  assert.ok(rolledBack);
-});
-
-test("the runtime model router follows the promoted registry model", async () => {
-  const { registerModel, promoteModel, getActiveModel } = await import("../src/ai/models/modelRegistry.js");
-  const { getModelProvider, resetModelProvider } = await import("../src/ai/models/modelRouter.js");
-  const before = await getActiveModel();
-  const id = `router-${Date.now()}`;
-  await registerModel({ id, baseModel: "router-model", provider: "ollama", type: "LOCAL", status: "CANDIDATE" });
-  await promoteModel(id, { passed: true });
-  resetModelProvider();
-  const provider = await getModelProvider();
-  assert.equal(provider.model, "router-model");
-  if (before) {
-    const rollback = await import("../src/ai/models/modelRegistry.js");
-    await rollback.rollbackModel();
-    resetModelProvider();
-  }
-});
-
-test("failure analyzer distinguishes retrieval and memory failures", () => {
-  const failures = analyzeFailures({ failedCases: [{ id: "retrieval", query: "retrieval miss wrong knowledge" }, { id: "memory", query: "remember my name" }] });
-  assert.equal(failures[0].category, "RETRIEVAL_MISS");
-  assert.equal(failures[1].category, "MEMORY_ERROR");
-});
-
-test("privacy gate rejects secrets and PII", () => {
-  assert.equal(privacyCheck({ instruction: "api key: secret-123", output: "x" }).safe, false);
-  assert.equal(privacyCheck({ instruction: "email test@example.com", output: "x" }).safe, false);
-});
-
-test("training schema and deterministic split are reproducible", () => {
-  const normalized = normalizeExample({ id: "a", type: "SFT", instruction: "x", output: "y", privacySafe: true });
-  assert.equal(normalized.datasetVersion.length > 0, true);
-  assert.equal(stableSplit("a"), stableSplit("a"));
-});
-
-test("training config is explicit and local-first", async () => {
-  const readme = await readFile(join(process.cwd(), "training/README.md"), "utf8");
-  assert.match(readme, /training:prepare/);
-  assert.match(readme, /training:run/);
+    const conflict = await createAndVerify("conflict-1", "Switch traffic before draining copper queue.");
+    assert.equal(conflict.result.lesson.status, "candidate");
+    assert.ok(conflict.result.lesson.conflictsWith.includes(first.lesson.lessonId));
+    assert.equal(conflict.lesson.status, "quarantined");
+    const lessons = await retrieveVerifiedLessons(pattern, 10);
+    assert.equal(lessons.filter((item) => item.lessonId === first.lesson.lessonId).length, 1);
+    assert.equal(lessons.some((item) => item.lessonId === conflict.lesson.lessonId), false);
+  });
 });

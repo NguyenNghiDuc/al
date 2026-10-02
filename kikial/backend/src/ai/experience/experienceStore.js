@@ -7,7 +7,7 @@ import { verifyLessonCandidate } from "../verification/verifier.js";
 import { getKnowledge } from "../../../lib/learningMemory.js";
 
 const dataDirectory = join(fileURLToPath(new URL("../../../data/", import.meta.url)));
-const storePath = () => process.env.KIKIAL_EXPERIENCE_STORE_PATH || join(dataDirectory, "experienceStore.json");
+const storePath = () => process.env.KIKIAL_EXPERIENCE_STORE_PATH || process.env.KIKIAL_EXPERIENCE_PATH || join(dataDirectory, "experienceStore.json");
 const emptyStore = () => ({ experiences: [], failures: [], lessons: [] });
 const normalize = (value) => String(value || "").normalize("NFD").replace(/\p{Diacritic}/gu, "").replace(/[đĐ]/g, "d").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
 let transactionQueue = Promise.resolve();
@@ -153,4 +153,38 @@ export async function listVerifiedLessons() {
 export async function listExperienceStore() {
   await transactionQueue;
   return readStore();
+}
+
+// Compatibility aliases for older callers/tests. New code should prefer the explicit APIs above.
+export async function submitFailure({ interactionId, reason, correction, userInput, assistantAnswer } = {}) {
+  const existing = interactionId ? await getExperience(interactionId) : null;
+  if (!existing && interactionId) {
+    await recordExperience({ interactionId, userInput, assistantAnswer, modelId: "unknown", sources: [] });
+  }
+  return markInteractionFailure({ interactionId, reason, correction });
+}
+
+export async function listLessons() {
+  await transactionQueue;
+  return (await readStore()).lessons.map((item) => ({ ...item }));
+}
+
+export async function verifyLesson(lessonId, decisionOrEvidence = []) {
+  if (decisionOrEvidence && !Array.isArray(decisionOrEvidence) && typeof decisionOrEvidence === "object" && decisionOrEvidence.status) {
+    return transact((store) => {
+      const lesson = store.lessons.find((item) => item.lessonId === lessonId);
+      if (!lesson) {
+        const error = new Error("Lesson not found.");
+        error.code = "LESSON_NOT_FOUND";
+        throw error;
+      }
+      lesson.status = decisionOrEvidence.status;
+      lesson.confidence = Number(decisionOrEvidence.confidence) || 0;
+      lesson.evidenceRefs = Array.isArray(decisionOrEvidence.evidenceRefs) ? decisionOrEvidence.evidenceRefs : [];
+      lesson.verificationReasons = Array.isArray(decisionOrEvidence.reasons) ? decisionOrEvidence.reasons : [];
+      lesson.updatedAt = new Date().toISOString();
+      return { ...lesson };
+    });
+  }
+  return verifyStoredLesson({ lessonId, evidence: Array.isArray(decisionOrEvidence) ? decisionOrEvidence : [decisionOrEvidence] });
 }

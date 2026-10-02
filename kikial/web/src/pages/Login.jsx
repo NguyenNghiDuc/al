@@ -1,39 +1,25 @@
 import { useState } from "react";
-
-async function parseJsonResponse(response) {
-  const raw = await response.text();
-
-  if (!raw) {
-    return { message: `Không nhận được phản hồi từ máy chủ (${response.status}).` };
-  }
-
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return { message: `Máy chủ trả về dữ liệu không hợp lệ (${response.status}).` };
-  }
-}
+import { api } from "../services/api";
 
 export default function Login({ onSuccess, onRegister }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function submit(event) {
     event.preventDefault();
+    if (loading) return;
     setLoading(true);
     setMessage("");
 
     try {
-      const response = await fetch("/api/auth/login", {
+      const result = await api("/api/auth/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: email.trim(), password }),
       });
-      const result = await parseJsonResponse(response);
-
-      if (!response.ok) throw new Error(result.message || "Đăng nhập thất bại.");
+      if (!result.token || !result.user?.email) throw new Error("Máy chủ chưa trả về phiên đăng nhập hợp lệ.");
       localStorage.setItem("kikial-token", result.token);
       onSuccess?.(result.user);
     } catch (error) {
@@ -45,13 +31,15 @@ export default function Login({ onSuccess, onRegister }) {
 
   return (
     <main className="auth-page">
+      <div className="auth-glow auth-glow-one" aria-hidden="true" />
+      <div className="auth-glow auth-glow-two" aria-hidden="true" />
       <div className="auth-shell auth-shell--login">
         <div className="auth-topbar">
           <div className="auth-brand-wrap">
             <span className="auth-brand-mark">✦</span>
             <span className="auth-brand">kikial.</span>
           </div>
-          <button type="button" className="auth-language">Tiếng Việt ▾</button>
+          <span className="auth-language">AI local · Riêng tư</span>
         </div>
 
         <div className="auth-surface">
@@ -62,47 +50,35 @@ export default function Login({ onSuccess, onRegister }) {
 
           <div className="auth-heading-block">
             <div className="auth-subtitle">Chào mừng trở lại</div>
-            <h1>Đăng nhập</h1>
-            <p>Tiếp tục hành trình trinh cứu...</p>
+            <h1>Đăng nhập vào Kikial</h1>
+            <p>Tiếp tục hội thoại, tài liệu và không gian AI của bạn.</p>
           </div>
 
           <form className="auth-form" onSubmit={submit}>
             <label htmlFor="login-email">Email</label>
             <div className="auth-field">
               <span className="auth-icon">✉</span>
-              <input id="login-email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="name@example.com" required />
+              <input id="login-email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="name@example.com" required />
             </div>
 
             <label htmlFor="login-password">Mật khẩu</label>
             <div className="auth-field">
               <span className="auth-icon">◌</span>
-              <input id="login-password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Nhập mật khẩu" required />
-              <span className="auth-eye">◉</span>
+              <input id="login-password" type={showPassword ? "text" : "password"} autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Nhập mật khẩu" required />
+              <button type="button" className="auth-eye" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}>{showPassword ? "◌" : "◉"}</button>
             </div>
 
-            <div className="auth-row">
-              <label className="auth-check">
-                <input type="checkbox" defaultChecked />
-                <span>Ghi nhớ đăng nhập</span>
-              </label>
-
-              <button type="button" className="auth-link">Quên mật khẩu?</button>
-            </div>
-
-            <button type="submit" className="auth-submit" disabled={loading}>
-              {loading ? "Đang kiểm tra..." : "Đăng nhập →"}
+            <button type="submit" className="auth-submit" disabled={loading || !email.trim() || !password}>
+              {loading ? "Đang đăng nhập…" : "Đăng nhập →"}
             </button>
 
-            <p className="auth-message" role="alert">{message}</p>
-
-            <div className="auth-divider">Hoặc đăng nhập bằng</div>
-
-            <div className="auth-socials">
-              <button type="button" className="auth-social">Google</button>
-              <button type="button" className="auth-social">GitHub</button>
-              <button type="button" className="auth-social">Microsoft</button>
-            </div>
+            {message && <p className="auth-message" role="alert">{message}</p>}
           </form>
+
+          <div className="auth-security-note">
+            <span>◆</span>
+            <div><strong>Thiết kế local-first</strong><small>Dữ liệu hội thoại và model có thể chạy trong máy của bạn.</small></div>
+          </div>
 
           <p className="auth-switch">Chưa có tài khoản? <button type="button" onClick={onRegister}>Đăng ký ngay</button></p>
         </div>

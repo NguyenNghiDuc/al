@@ -14,9 +14,30 @@ export async function executeToolRequest(name, context, input = {}) {
   }
 }
 
+// Backward-compatible structured executor used by older planner/tests and custom tools.
+// A tool object may provide its own execute() function without being registered globally.
+export async function executeStructuredTool(tool, context = {}, input = {}) {
+  const started = performance.now();
+  const name = typeof tool === "string" ? tool : tool?.name || "anonymous";
+  try {
+    const data = typeof tool?.execute === "function"
+      ? await tool.execute(input, context)
+      : await executeTool(name, context, input);
+    return { ok: true, tool: name, data, error: null, metadata: { latencyMs: Math.round(performance.now() - started) } };
+  } catch (error) {
+    return { ok: false, tool: name, data: null, error: error.message || String(error), errorDetail: { code: error.code || "TOOL_ERROR", message: error.message || String(error) }, metadata: { latencyMs: Math.round(performance.now() - started) } };
+  }
+}
+
 export async function executeToolsParallel(requests, context, concurrency = 2) {
-  const results = []; let cursor = 0;
-  async function worker() { while (cursor < requests.length) { const index = cursor++; results[index] = await executeToolRequest(requests[index].name, context, requests[index].input); } }
+  const results = [];
+  let cursor = 0;
+  async function worker() {
+    while (cursor < requests.length) {
+      const index = cursor++;
+      results[index] = await executeToolRequest(requests[index].name, context, requests[index].input);
+    }
+  }
   await Promise.all(Array.from({ length: Math.min(concurrency, requests.length) }, worker));
   return results;
 }

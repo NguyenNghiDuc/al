@@ -4,9 +4,12 @@ import { calculate } from "../lib/calculator.js";
 import { rerank } from "../src/ai/retrieval/reranker.js";
 import { analyzeQuery } from "../src/ai/query/queryAnalyzer.js";
 import { buildContext } from "../src/ai/context/contextBuilder.js";
+import { createEvidencePack } from "../src/ai/context/evidencePack.js";
 import { extractCandidateMemories } from "../src/ai/memory/memoryManager.js";
 import { executeTool } from "../src/ai/tools/index.js";
 import { codingAgent } from "../src/ai/agents/codingAgent.js";
+import { shouldSearchWeb, webSearchEnabled } from "../src/ai/retrieval/webSearch.js";
+import { OpenAICompatibleProvider } from "../src/ai/models/openAICompatibleProvider.js";
 
 const answer = (question) => calculate(question)?.answer;
 
@@ -58,4 +61,49 @@ test("coding agent never executes arbitrary shell", () => {
   const result = codingAgent({ code: "exec('rm -rf /')", language: "js" });
   assert.equal(result.execution, "disabled");
   assert.ok(result.issues.length);
+});
+
+test("web search only activates when configured and the query needs freshness", () => {
+  const previousUrl = process.env.SEARXNG_URL;
+  const previousAlways = process.env.WEB_SEARCH_ALWAYS;
+  delete process.env.SEARXNG_URL;
+  delete process.env.WEB_SEARCH_ALWAYS;
+  assert.equal(webSearchEnabled(), false);
+  assert.equal(shouldSearchWeb("tin mới nhất hôm nay"), false);
+
+  process.env.SEARXNG_URL = "http://127.0.0.1:8080";
+  assert.equal(webSearchEnabled(), true);
+  assert.equal(shouldSearchWeb("tin mới nhất hôm nay"), true);
+  assert.equal(shouldSearchWeb("2 + 2 bằng mấy"), false);
+
+  if (previousUrl === undefined) delete process.env.SEARXNG_URL;
+  else process.env.SEARXNG_URL = previousUrl;
+  if (previousAlways === undefined) delete process.env.WEB_SEARCH_ALWAYS;
+  else process.env.WEB_SEARCH_ALWAYS = previousAlways;
+});
+
+test("retrieved web evidence is selected for answer synthesis and preserves provenance", () => {
+  const pack = createEvidencePack({
+    query: "tin mới nhất",
+    retrieved: [{
+      id: "web:1",
+      sourceId: "https://example.com/news",
+      sourceType: "web",
+      title: "Ví dụ tin mới",
+      url: "https://example.com/news",
+      text: "Nội dung web phù hợp với câu hỏi hiện tại.",
+      score: 0.9,
+    }],
+  });
+  assert.equal(pack.knowledge.length, 1);
+  assert.equal(pack.knowledge[0].sourceType, "web");
+  assert.equal(pack.knowledge[0].url, "https://example.com/news");
+  assert.equal(pack.knowledge[0].title, "Ví dụ tin mới");
+});
+
+test("OpenAI-compatible provider exposes the common model contract", () => {
+  const provider = new OpenAICompatibleProvider({ baseUrl: "http://127.0.0.1:1234/v1", model: "test-model", embeddingModel: "test-embed" });
+  assert.equal(provider.model, "test-model");
+  assert.equal(provider.embeddingModel, "test-embed");
+  assert.equal(provider.supportsTools(), true);
 });

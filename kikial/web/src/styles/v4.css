@@ -1,0 +1,22 @@
+.ki-rich-message { display: grid; gap: 10px; line-height: 1.75; overflow-wrap: anywhere; }
+.ki-rich-message p, .ki-rich-message ul, .ki-rich-message pre, .ki-rich-message h3, .ki-rich-message h4 { margin: 0; }
+.ki-rich-message ul { padding-left: 22px; display: grid; gap: 5px; }
+.ki-rich-message a { color: #91dcff; text-decoration: underline; text-underline-offset: 3px; }
+.ki-rich-message code:not(pre code) { padding: 2px 6px; border-radius: 6px; background: rgba(255,255,255,.08); color: #f6dc9b; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.ki-rich-message pre { max-width: 100%; overflow-x: auto; border: 1px solid rgba(255,255,255,.08); border-radius: 12px; background: #080d16; }
+.ki-rich-message pre code { display: block; padding: 14px; white-space: pre; font: 13px/1.65 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: #e8edf8; }
+.ki-code-head { display: flex; align-items: center; min-height: 34px; padding: 7px 12px; border-bottom: 1px solid rgba(255,255,255,.07); color: #9facbf; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+.ki-source-grid { display: grid; gap: 7px; margin-top: 12px; }
+.ki-source-card { display: flex; align-items: flex-start; gap: 9px; padding: 9px 11px; border: 1px solid rgba(255,255,255,.07); border-radius: 10px; background: rgba(255,255,255,.025); color: inherit; text-decoration: none; }
+.ki-source-card:hover { border-color: rgba(145,220,255,.45); background: rgba(145,220,255,.06); }
+.ki-source-card > span { color: #91dcff; font-size: 12px; }
+.ki-source-card div { display: grid; min-width: 0; gap: 2px; }
+.ki-source-card strong { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ki-source-card small { color: #9aa7c3; font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ki-message-actions { margin-top: 10px; flex-wrap: wrap; }
+.ki-message-actions button { padding: 6px 9px; font-size: 11px; }
+.ki-history-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center; margin: 14px 0 16px; }
+.ki-pinned { border-color: rgba(214,255,89,.32) !important; box-shadow: inset 3px 0 0 rgba(214,255,89,.7); }
+.ki-file-button { display: inline-flex; align-items: center; justify-content: center; min-height: 42px; padding: 10px 13px; border: 1px dashed #52627f; border-radius: 10px; background: rgba(255,255,255,.025); color: #dce8ff; cursor: pointer; font-size: 13px; }
+.ki-file-button:hover { border-color: #91dcff; background: rgba(145,220,255,.05); }
+@media (max-width: 680px) { .ki-history-toolbar { grid-template-columns: 1fr 1fr; } .ki-history-toolbar input { grid-column: 1 / -1; } }

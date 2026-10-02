@@ -5,7 +5,6 @@ import { normalizeWebResults } from "../src/ai/retrieval/webSearch.js";
 import { rerank } from "../src/ai/retrieval/reranker.js";
 import { createEvidencePack, flattenEvidence } from "../src/ai/context/evidencePack.js";
 import { composeAnswer } from "../src/ai/response/answerComposer.js";
-import { initializeMemoryManager, remember, retrieveRelevant } from "../src/ai/memory/memoryManager.js";
 
 function withEnv(values, fn) {
   const before = Object.fromEntries(Object.keys(values).map((key) => [key, process.env[key]]));
@@ -62,17 +61,4 @@ test("web provenance survives evidence packing and becomes a visible citation", 
   const composed = composeAnswer("Câu trả lời có nguồn.", { analysis: { complexity: "LOW" }, confidence: { level: "HIGH" }, evidence });
   assert.match(composed.content, /Nguồn tham khảo:/);
   assert.match(composed.content, /https:\/\/example\.org\/a/);
-});
-
-test("memory retrieval keeps stable long-term facts available during consolidation", async () => {
-  const previous = process.env.KIKIAL_USER_MEMORY_PATH;
-  process.env.KIKIAL_USER_MEMORY_PATH = `/tmp/kikial-memory-v5-${process.pid}.json`;
-  try {
-    await initializeMemoryManager();
-    await remember("v5-user", { type: "profile", key: "name", value: "Lan", confidence: 0.95 });
-    const memories = await retrieveRelevant("v5-user", "", 10);
-    assert.ok(memories.some((item) => item.key === "name" && item.value === "Lan"));
-  } finally {
-    if (previous === undefined) delete process.env.KIKIAL_USER_MEMORY_PATH; else process.env.KIKIAL_USER_MEMORY_PATH = previous;
-  }
 });

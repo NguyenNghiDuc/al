@@ -57,9 +57,11 @@ export function createEvidencePack({ query, memory = [], knowledge = [], documen
   return {
     query,
     userMemories: memory.map((entry) => item("USER_MEMORY", entry.id || entry.key, entry.value, entry.score, 0.9, entry.updatedAt)),
+    // Web evidence lives in this selected pool too because orchestrator synthesizes
+    // knowledge + documents + experience. It retains sourceType="web", URL/title and lower trust.
     knowledge: [
       ...knowledge.map((entry) => item(entry.sourceType || "CURATED", entry.id, entry.text || entry.answer, entry.score, entry.verified ? 1 : 0.8, entry.updatedAt)),
-      ...retrievedItems.filter((entry) => ["knowledge", "verified_lesson", "lesson"].includes(entry.sourceType)),
+      ...retrievedItems.filter((entry) => ["knowledge", "verified_lesson", "lesson", "web"].includes(entry.sourceType)),
     ],
     documents: [
       ...documents.map((entry) => item("DOCUMENT", entry.documentId || entry.chunkId, entry.text, entry.score, 0.9, entry.createdAt)),
@@ -70,10 +72,7 @@ export function createEvidencePack({ query, memory = [], knowledge = [], documen
       ...bySource("experience"),
     ],
     toolResults: toolResults.map((entry) => item("TOOL", entry.tool || entry.name, entry.data || entry.answer || entry, 1, 1)),
-    webResults: [
-      ...webResults.map((entry) => item("web", entry.sourceId || entry.id || entry.url, entry.content || entry.text || entry.answer, entry.score, entry.trust || 0.65, entry.timestamp, { title: entry.title || null, url: entry.url || null })),
-      ...bySource("web"),
-    ],
+    webResults: webResults.map((entry) => item("web", entry.sourceId || entry.id || entry.url, entry.content || entry.text || entry.answer, entry.score, entry.trust || 0.65, entry.timestamp, { title: entry.title || null, url: entry.url || null })),
   };
 }
 

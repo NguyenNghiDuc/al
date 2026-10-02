@@ -22,7 +22,6 @@ jobs:
       - run: npm ci
       - run: npm test
         env:
-          AI_DISABLE_MODEL: "true"
           AUTH_SECRET: ci-only-secret-not-for-production
 
   web-build:

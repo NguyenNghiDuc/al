@@ -5,6 +5,7 @@ import { vectorStore } from "./vectorStore.js";
 import { getKnowledge, getLearned } from "../../../lib/learningMemory.js";
 import { searchDocuments } from "../../services/documentService.js";
 import { listVerifiedLessons } from "../experience/experienceStore.js";
+import { searchWeb, shouldSearchWeb } from "./webSearch.js";
 
 let initialized = false;
 const signature = (item) => createHash("sha1").update(`${item.id}:${item.updatedAt || item.learnedAt || ""}:${item.question}:${item.answer}`).digest("hex");
@@ -90,21 +91,23 @@ function deduplicateCandidates(candidates) {
   return selected;
 }
 
-export async function retrieveEvidence({ userId, query, queries = [], limit = 5, onMetrics, documentRetriever = searchDocuments, knowledgeRetriever = searchKnowledge, experienceRetriever = retrieveFromExperience, lessonRetriever = retrieveVerifiedLessons } = {}) {
+export async function retrieveEvidence({ userId, query, queries = [], limit = 5, onMetrics, documentRetriever = searchDocuments, knowledgeRetriever = searchKnowledge, experienceRetriever = retrieveFromExperience, lessonRetriever = retrieveVerifiedLessons, webRetriever = searchWeb } = {}) {
   const searchQueries = [...new Set([query, ...queries].filter(Boolean))].slice(0, 3);
   const knowledgeItems = await Promise.all(searchQueries.map((term) => knowledgeRetriever(term, limit * 3)));
   const documentItems = await Promise.all(searchQueries.map((term) => documentRetriever(userId, term, limit * 3)));
   const lessonItems = await Promise.all(searchQueries.map((term) => lessonRetriever(term, limit * 3)));
   const experienceItems = await experienceRetriever(query, { userId, limit: limit * 3 });
+  const webItems = shouldSearchWeb(query) ? await webRetriever(query, Math.min(limit * 2, 10)) : [];
   const candidates = [
     ...knowledgeItems.flat().map((item) => ({ ...item, sourceId: item.id, sourceType: item.store === "learned" && item.verified ? "verified_lesson" : "knowledge", text: item.answer, similarity: item.similarity || item.score || 0 })),
     ...documentItems.flat().map((item) => ({ ...item, id: item.chunkId || `${item.documentId}:${item.chunkIndex}`, sourceId: item.documentId, sourceType: "document", filename: item.filename, chunkId: item.chunkId || `${item.documentId}:${item.chunkIndex}`, question: item.filename, answer: item.text, similarity: item.score })),
     ...lessonItems.flat().map((item) => ({ ...item, sourceId: item.lessonId || item.sourceId || item.id, lessonId: item.lessonId || item.id, sourceType: "lesson", text: item.text || item.correction || item.answer, answer: item.correction || item.answer, similarity: item.similarity || item.score || 0 })),
     ...experienceItems.map((item) => ({ ...item, sourceId: item.sourceId || item.id, sourceType: "experience", similarity: item.similarity || item.score || 0 })),
+    ...webItems.map((item) => ({ ...item, sourceId: item.sourceId || item.url || item.id, sourceType: "web", text: item.text || item.answer, similarity: item.similarity || item.score || 0 })),
   ];
   const deduplicated = deduplicateCandidates(candidates);
   const ranked = rerank(query, deduplicated, limit);
-  onMetrics?.({ retrieved: candidates.length, deduplicated: deduplicated.length, reranked: ranked.length });
+  onMetrics?.({ retrieved: candidates.length, deduplicated: deduplicated.length, reranked: ranked.length, web: webItems.length });
   return ranked;
 }
 

@@ -1,26 +1,42 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api } from "../services/api";
+import "../styles/admin.css";
 
-export default function AdminPage({
-  user,
-  onBack,
-  onLogout,
-  embedded = false,
-}) {
+const NAV = [
+  ["overview", "Tổng quan"],
+  ["knowledge", "Kiến thức"],
+  ["users", "Người dùng"],
+  ["system", "Hệ thống AI"],
+];
+
+function Status({ ok, label }) {
+  return <span className={`admin-status ${ok ? "ok" : "off"}`}>{label}</span>;
+}
+
+export default function AdminPage({ user, onBack, onLogout }) {
+  const [tab, setTab] = useState("overview");
+  const [overview, setOverview] = useState(null);
   const [items, setItems] = useState([]);
+  const [users, setUsers] = useState([]);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);
   const [error, setError] = useState("");
 
-  async function loadKnowledge() {
+  async function loadAll() {
+    if (user?.role !== "admin") return;
     setLoading(true);
     setError("");
-
     try {
-      const result = await api("/api/admin/knowledge");
-      setItems(Array.isArray(result.items) ? result.items : []);
+      const [summary, knowledge, accountList] = await Promise.all([
+        api("/api/admin/overview"),
+        api("/api/admin/knowledge"),
+        api("/api/admin/users"),
+      ]);
+      setOverview(summary);
+      setItems(Array.isArray(knowledge.items) ? knowledge.items : []);
+      setUsers(Array.isArray(accountList.items) ? accountList.items : []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -29,44 +45,25 @@ export default function AdminPage({
   }
 
   useEffect(() => {
-    if (user?.role === "admin") {
-      loadKnowledge();
-    } else {
-      setLoading(false);
-    }
+    if (user?.role === "admin") loadAll();
+    else setLoading(false);
   }, [user?.role]);
 
   async function updateItem(item, action) {
     if (busyId) return;
-
-    if (
-      action === "delete" &&
-      !window.confirm(`Xóa kiến thức: "${item.question}"?`)
-    ) {
-      return;
-    }
-
+    if (action === "delete" && !window.confirm(`Xóa kiến thức: "${item.question}"?`)) return;
     setBusyId(item.id);
     setError("");
-
     try {
       if (action === "delete") {
-        await api(
-          `/api/admin/knowledge/${encodeURIComponent(item.id)}`,
-          { method: "DELETE" },
-        );
+        await api(`/api/admin/knowledge/${encodeURIComponent(item.id)}`, { method: "DELETE" });
       } else {
         await api("/api/admin/knowledge/verify", {
           method: "POST",
-          body: JSON.stringify({
-            id: item.id,
-            verified: true,
-          }),
+          body: JSON.stringify({ id: item.id, verified: true, promote: action === "promote" }),
         });
       }
-
-      // Tải lại để số lượng và trạng thái khớp backend.
-      await loadKnowledge();
+      await loadAll();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -74,132 +71,166 @@ export default function AdminPage({
     }
   }
 
-  const normalizedQuery = query.trim().toLocaleLowerCase("vi");
+  const visibleItems = useMemo(() => {
+    const needle = query.trim().toLocaleLowerCase("vi");
+    return items.filter((item) => {
+      const text = `${item.question || ""} ${item.answer || ""}`.toLocaleLowerCase("vi");
+      const matchesFilter = filter === "all" || (filter === "verified" && item.verified) || (filter === "pending" && !item.verified);
+      return matchesFilter && text.includes(needle);
+    });
+  }, [items, query, filter]);
 
-  const visibleItems = items.filter((item) => {
-    const text = `${item.question || ""} ${item.answer || ""}`
-      .toLocaleLowerCase("vi");
+  if (user?.role !== "admin") {
+    return (
+      <main className="admin-page" style={{ display: "grid", placeItems: "center", padding: 24 }}>
+        <section className="admin-panel" style={{ maxWidth: 520 }}>
+          <h2>Không có quyền quản trị</h2>
+          <p>Tài khoản này không được phép mở bảng điều khiển admin.</p>
+          <button className="admin-primary" onClick={onBack}>Về chat</button>
+        </section>
+      </main>
+    );
+  }
 
-    const matchesFilter =
-      filter === "all" ||
-      (filter === "verified" && item.verified) ||
-      (filter === "pending" && !item.verified);
-
-    return matchesFilter && text.includes(normalizedQuery);
-  });
-
-  const pending = items.filter((item) => !item.verified).length;
+  const stats = overview?.stats || {};
+  const system = overview?.system || {};
 
   return (
-    <section className={embedded ? "ki-library" : "ki-library ki-library-full"}>
-      <div className="ki-toolbar">
-        <div>
-          <h2>Thư viện kiến thức</h2>
-          <p className="ki-muted">
-            {items.length} bản ghi · {pending} chờ duyệt
-          </p>
+    <div className="admin-page">
+      <aside className="admin-sidebar">
+        <div className="admin-brand">
+          <span className="admin-brand-mark">✦</span>
+          <div>Kikial<small>Control Center</small></div>
         </div>
 
-        <div className="ki-actions">
-          {!embedded && onBack && (
-            <button onClick={onBack}>Về chat</button>
-          )}
+        <nav className="admin-nav" aria-label="Admin navigation">
+          {NAV.map(([id, label]) => (
+            <button key={id} className={tab === id ? "active" : ""} onClick={() => setTab(id)}>{label}</button>
+          ))}
+        </nav>
 
-          {user?.role === "admin" && (
-            <button
-              onClick={loadKnowledge}
-              disabled={loading || Boolean(busyId)}
-            >
-              {loading ? "Đang tải…" : "↻ Làm mới"}
-            </button>
-          )}
-
-          {!embedded && onLogout && (
-            <button onClick={onLogout}>Đăng xuất</button>
-          )}
-        </div>
-      </div>
-
-      {user?.role !== "admin" ? (
-        <div className="ki-card">
-          Kho kiến thức hiện được backend giới hạn cho quản trị viên.
-          Tài khoản của bạn vẫn có thể hỏi Kikial bằng trang Chat.
-        </div>
-      ) : (
-        <>
-          <div className="ki-toolbar">
-            <input
-              aria-label="Tìm kiến thức"
-              placeholder="Tìm trong câu hỏi hoặc câu trả lời…"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-            />
-
-            <select
-              aria-label="Lọc trạng thái"
-              value={filter}
-              onChange={(event) => setFilter(event.target.value)}
-            >
-              <option value="all">Tất cả</option>
-              <option value="pending">Chờ duyệt</option>
-              <option value="verified">Đã duyệt</option>
-            </select>
+        <div className="admin-sidebar-bottom">
+          <div className="admin-user-mini">
+            <strong>{user.name || "Admin"}</strong>
+            <span>{user.email}</span>
           </div>
+          <button className="admin-ghost" onClick={onBack}>← Về chat</button>
+          <button className="admin-danger-btn" onClick={onLogout}>Đăng xuất</button>
+        </div>
+      </aside>
 
-          {error && <p className="ki-error" role="alert">{error}</p>}
+      <main className="admin-main">
+        <header className="admin-header">
+          <div>
+            <h1>{NAV.find(([id]) => id === tab)?.[1]}</h1>
+            <p>Quản lý kiến thức, tài khoản và trạng thái hệ thống AI của Kikial.</p>
+          </div>
+          <div className="admin-header-actions">
+            <button className="admin-ghost" onClick={onBack}>Về chat</button>
+            <button className="admin-primary" onClick={loadAll} disabled={loading}>{loading ? "Đang tải…" : "↻ Làm mới"}</button>
+          </div>
+        </header>
 
-          <p className="ki-muted">
-            Hiển thị {visibleItems.length} / {items.length} bản ghi
-          </p>
+        {error && <p className="admin-error" role="alert">{error}</p>}
 
-          {loading ? (
-            <p>Đang tải kiến thức…</p>
-          ) : visibleItems.length === 0 ? (
-            <div className="ki-card">Không có kiến thức phù hợp.</div>
-          ) : (
-            <div className="ki-list">
-              {visibleItems.map((item) => (
-                <article className="ki-card" key={item.id}>
-                  <div className="ki-actions">
-                    <span className="ki-badge">
-                      {item.verified ? "Đã duyệt" : "Chờ duyệt"}
-                    </span>
-                    <span className="ki-muted">
-                      {item.hits || 0} lượt sử dụng
-                    </span>
-                  </div>
+        {tab === "overview" && (
+          <>
+            <section className="admin-grid">
+              <div className="admin-stat"><div className="label">Người dùng</div><div className="value">{stats.users ?? "—"}</div><div className="sub">{stats.admins ?? 0} quản trị viên</div></div>
+              <div className="admin-stat"><div className="label">Knowledge</div><div className="value">{stats.knowledge ?? "—"}</div><div className="sub">Kho tri thức đã quản lý</div></div>
+              <div className="admin-stat"><div className="label">Đã học</div><div className="value">{stats.learned ?? "—"}</div><div className="sub">{stats.pending ?? 0} đang chờ duyệt</div></div>
+              <div className="admin-stat"><div className="label">Vector index</div><div className="value">{stats.vectors ?? "—"}</div><div className="sub">{stats.graph ?? 0} graph facts</div></div>
+            </section>
 
-                  <h3>{item.question}</h3>
+            <section className="admin-panels">
+              <article className="admin-panel">
+                <h2>Trạng thái AI</h2>
+                <div className="admin-kv">
+                  <div className="admin-kv-row"><span>Model</span><strong>{system.model || "Chưa xác định"}</strong></div>
+                  <div className="admin-kv-row"><span>Model runtime</span><Status ok={system.modelOnline} label={system.modelOnline ? "Online" : "Offline"} /></div>
+                  <div className="admin-kv-row"><span>Embedding</span><Status ok={system.embeddingOnline} label={system.embeddingOnline ? "Online" : "Offline"} /></div>
+                  <div className="admin-kv-row"><span>Vector store</span><Status ok={system.vectorOnline} label={system.vectorOnline ? "Online" : "Offline"} /></div>
+                  <div className="admin-kv-row"><span>Web search</span><Status ok={system.webSearchOnline} label={system.webSearchOnline ? "Enabled" : "Disabled"} /></div>
+                </div>
+              </article>
+              <article className="admin-panel">
+                <h2>Độ sẵn sàng</h2>
+                <p style={{ color: "var(--admin-muted)", lineHeight: 1.7 }}>
+                  Kikial kết hợp model local, memory, hybrid RAG, graph, verified lessons và live web retrieval khi được cấu hình.
+                </p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 16 }}>
+                  {(system.degraded || []).length ? system.degraded.map((item) => <span key={item} className="admin-status warn">{item}</span>) : <span className="admin-status ok">ALL_SYSTEMS_READY</span>}
+                </div>
+              </article>
+            </section>
+          </>
+        )}
 
-                  <details>
-                    <summary>Xem / thu gọn câu trả lời</summary>
-                    <div className="ki-answer">{item.answer}</div>
-                  </details>
-
-                  <div className="ki-actions ki-space">
-                    {!item.verified && (
-                      <button
-                        disabled={Boolean(busyId)}
-                        onClick={() => updateItem(item, "approve")}
-                      >
-                        Duyệt kiến thức
-                      </button>
-                    )}
-
-                    <button
-                      className="ki-danger"
-                      disabled={Boolean(busyId)}
-                      onClick={() => updateItem(item, "delete")}
-                    >
-                      {busyId === item.id ? "Đang xử lý…" : "Xóa"}
-                    </button>
-                  </div>
-                </article>
-              ))}
+        {tab === "knowledge" && (
+          <section className="admin-panel">
+            <div className="admin-toolbar">
+              <input className="admin-input" placeholder="Tìm câu hỏi hoặc câu trả lời…" value={query} onChange={(e) => setQuery(e.target.value)} />
+              <select className="admin-select" value={filter} onChange={(e) => setFilter(e.target.value)}>
+                <option value="all">Tất cả</option><option value="pending">Chờ duyệt</option><option value="verified">Đã duyệt</option>
+              </select>
             </div>
-          )}
-        </>
-      )}
-    </section>
+            <div className="admin-table-wrap">
+              <table className="admin-table">
+                <thead><tr><th>Trạng thái</th><th>Câu hỏi</th><th>Câu trả lời</th><th>Thao tác</th></tr></thead>
+                <tbody>
+                  {visibleItems.map((item) => (
+                    <tr key={item.id}>
+                      <td><span className={`admin-status ${item.verified ? "ok" : "warn"}`}>{item.verified ? "Verified" : "Pending"}</span></td>
+                      <td><strong>{item.question}</strong><div style={{ color: "var(--admin-muted)", fontSize: 12, marginTop: 6 }}>{item.hits || 0} lượt dùng</div></td>
+                      <td className="admin-answer-cell">{item.answer}</td>
+                      <td><div style={{ display: "grid", gap: 7 }}>
+                        {!item.verified && <button className="admin-primary" disabled={Boolean(busyId)} onClick={() => updateItem(item, "approve")}>Duyệt</button>}
+                        {item.verified && item.store !== "knowledge" && <button className="admin-ghost" disabled={Boolean(busyId)} onClick={() => updateItem(item, "promote")}>Promote</button>}
+                        <button className="admin-danger-btn" disabled={Boolean(busyId)} onClick={() => updateItem(item, "delete")}>Xóa</button>
+                      </div></td>
+                    </tr>
+                  ))}
+                  {!visibleItems.length && <tr><td colSpan="4" className="admin-empty">Không có dữ liệu phù hợp.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
+
+        {tab === "users" && (
+          <section className="admin-panel">
+            <div className="admin-table-wrap">
+              <table className="admin-table">
+                <thead><tr><th>Tên</th><th>Email</th><th>Vai trò</th><th>Ngày tạo</th></tr></thead>
+                <tbody>{users.map((account) => <tr key={account.email}><td><strong>{account.name || "—"}</strong></td><td>{account.email}</td><td><span className={`admin-role ${account.role === "user" ? "user" : ""}`}>{account.role}</span></td><td>{account.createdAt ? new Date(account.createdAt).toLocaleString("vi-VN") : "—"}</td></tr>)}</tbody>
+              </table>
+            </div>
+          </section>
+        )}
+
+        {tab === "system" && (
+          <section className="admin-panels" style={{ marginTop: 0 }}>
+            <article className="admin-panel">
+              <h2>Runtime</h2>
+              <div className="admin-kv">
+                <div className="admin-kv-row"><span>Provider</span><strong>{system.aiProvider || "ollama"}</strong></div>
+                <div className="admin-kv-row"><span>Model</span><strong>{system.model || "—"}</strong></div>
+                <div className="admin-kv-row"><span>Embedding model</span><strong>{system.embeddingModel || "—"}</strong></div>
+                <div className="admin-kv-row"><span>Service</span><strong>{system.service || "—"}</strong></div>
+              </div>
+            </article>
+            <article className="admin-panel">
+              <h2>Năng lực</h2>
+              <div className="admin-kv">
+                <div className="admin-kv-row"><span>Hybrid retrieval</span><Status ok={system.vectorOnline} label="RAG" /></div>
+                <div className="admin-kv-row"><span>Knowledge graph</span><strong>{stats.graph ?? 0} facts</strong></div>
+                <div className="admin-kv-row"><span>Live web</span><Status ok={system.webSearchOnline} label={system.webSearchOnline ? "Enabled" : "Configure SearXNG"} /></div>
+                <div className="admin-kv-row"><span>Pending training data</span><strong>{stats.pending ?? 0}</strong></div>
+              </div>
+            </article>
+          </section>
+        )}
+      </main>
+    </div>
   );
 }

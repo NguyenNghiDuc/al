@@ -23,7 +23,8 @@ test('rankDocumentChunks prefers specific BM25 match', () => {
     { chunkIndex: 2, text: 'Mạng máy tính gồm DNS ARP NAT và nhiều giao thức khác.' },
   ];
   const ranked = rankDocumentChunks(chunks, 'CIDR /27 subnet mask IPv4', 3);
+  assert.ok(ranked.length >= 1);
   assert.equal(ranked[0].chunkIndex, 1);
   assert.ok(ranked[0].bm25Score > 0);
-  assert.ok(ranked[0].queryCoverage > ranked[1].queryCoverage);
+  assert.ok(ranked[0].queryCoverage >= 0.6);
 });

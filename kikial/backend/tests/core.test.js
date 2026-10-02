@@ -19,10 +19,13 @@ test("calculator preserves Vietnamese deterministic cases", () => {
   assert.match(answer("căn bậc hai của 144"), /12/);
 });
 
-test("query analyzer classifies math, memory, coding", () => {
+test("query analyzer classifies math, memory, coding and short factual questions", () => {
   assert.equal(analyzeQuery("25 + 10 * 3").intent, "MATH");
   assert.equal(analyzeQuery("Nhớ rằng tôi đang học Dart").intent, "MEMORY");
   assert.equal(analyzeQuery("Viết code Dart tìm số lớn nhất").intent, "CODING");
+  assert.equal(analyzeQuery("Node.js là gì?").intent, "CODING");
+  assert.equal(analyzeQuery("TCP là gì?").intent, "FACTUAL");
+  assert.equal(analyzeQuery("Xin chào").intent, "SIMPLE_CHAT");
 });
 
 test("memory extraction is structured and blocks secrets", () => {
@@ -39,10 +42,11 @@ test("reranker prefers a specific Flutter title over generic use-case titles", (
   assert.equal(result[0].id, "flutter");
 });
 
-test("context builder applies bounded sections", () => {
-  const context = buildContext({ question: "x", analysis: { intent: "FACTUAL" }, memory: [{ value: "private" }], knowledge: [], history: [{ role: "user", content: "a".repeat(10000) }] });
-  assert.ok(context.length < 5000);
+test("context builder applies bounded but richer sections", () => {
+  const context = buildContext({ question: "x", analysis: { intent: "FACTUAL", complexity: "LOW" }, memory: [{ value: "private" }], knowledge: [], history: [{ role: "user", content: "a".repeat(20000) }] });
+  assert.ok(context.length <= 12000);
   assert.match(context, /SYSTEM IDENTITY/);
+  assert.match(context, /ANSWERING RULES/);
 });
 
 test("calculator tool validates and executes", async () => {

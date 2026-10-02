@@ -1,0 +1,41 @@
+name: Kikial CI
+
+on:
+  push:
+    branches: [main, "upgrade/**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: kikial/backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: kikial/backend/package-lock.json
+      - run: npm ci
+      - run: npm test
+        env:
+          AI_DISABLE_MODEL: "true"
+          AUTH_SECRET: ci-only-secret-not-for-production
+
+  web-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: kikial/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: kikial/web/package-lock.json
+      - run: npm ci
+      - run: npm run build

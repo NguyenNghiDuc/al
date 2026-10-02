@@ -1,0 +1,229 @@
+/* V4 workspace compatibility layer.
+   Chat.jsx uses .ki-workspace while the original design system was scoped to .ki-shell. */
+
+.ki-workspace {
+  --ki-font: 16px;
+  --shell-bg: #070d16;
+  --panel-bg: rgba(11, 16, 24, 0.96);
+  --panel-alt: rgba(20, 26, 37, 0.96);
+  --sidebar-bg: rgba(8, 12, 20, 0.98);
+  --line: rgba(255, 255, 255, 0.08);
+  --text: #edf3ff;
+  --muted: #9aa7c3;
+  --soft: #7a8399;
+  --green: #d6ff59;
+  --purple: #b288ff;
+  --orange: #f7b15d;
+  --blue: #85d4ff;
+
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  width: 100%;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top left, rgba(148, 130, 255, 0.08), transparent 26%),
+    radial-gradient(circle at right center, rgba(164, 215, 255, 0.05), transparent 30%),
+    linear-gradient(180deg, #070d16 0%, #050b12 100%);
+  color: var(--text);
+  font-family: Manrope, Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.ki-workspace,
+.ki-workspace * {
+  box-sizing: border-box;
+}
+
+.ki-workspace button {
+  border: 1px solid #34415f;
+  border-radius: 10px;
+  background: #182139;
+  color: #edf0fc;
+  font: inherit;
+  cursor: pointer;
+}
+
+.ki-workspace button:hover:not(:disabled) {
+  border-color: rgba(178, 136, 255, 0.72);
+  background: #25304b;
+}
+
+.ki-workspace button:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+}
+
+.ki-workspace input:not([type="radio"]):not([type="checkbox"]),
+.ki-workspace select,
+.ki-workspace textarea {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #34415f;
+  border-radius: 12px;
+  background: #10182b;
+  color: #edf0fc;
+  font: inherit;
+}
+
+.ki-workspace .ki-sidebar {
+  width: 260px;
+  height: 100dvh;
+  min-height: 0;
+  padding: 18px 16px 16px;
+  overflow-y: auto;
+  border-right: 1px solid var(--line);
+  background: var(--sidebar-bg);
+}
+
+.ki-workspace .ki-main {
+  width: 100%;
+  height: 100dvh;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-right: 0;
+}
+
+.ki-workspace .ki-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.ki-workspace .ki-content {
+  width: min(100%, 1100px);
+  min-height: 100%;
+  margin: 0 auto;
+  padding: 28px 28px 44px;
+}
+
+/* Composer is a form itself in the current Chat.jsx. */
+.ki-workspace .ki-composer-area {
+  position: relative;
+  z-index: 10;
+  flex: 0 0 auto;
+  width: 100%;
+  padding: 12px 20px 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  background: linear-gradient(180deg, rgba(7, 13, 22, 0.86), #070d16 28%);
+  backdrop-filter: blur(16px);
+}
+
+.ki-workspace form.ki-composer {
+  display: grid;
+  gap: 10px;
+  width: min(100%, 900px);
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 12px 14px;
+  border: 1px solid #415579;
+  border-radius: 18px;
+  background: #141e32;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.24);
+}
+
+.ki-workspace form.ki-composer textarea {
+  min-height: 48px;
+  max-height: 180px;
+  padding: 9px 8px;
+  border: 0;
+  outline: 0;
+  resize: none;
+  background: transparent;
+  color: #f4f7ff;
+  line-height: 1.55;
+}
+
+.ki-workspace form.ki-composer textarea::placeholder {
+  color: #7f8ca8;
+}
+
+.ki-workspace form.ki-composer .ki-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ki-workspace form.ki-composer .ki-actions button {
+  flex: 0 0 auto;
+  padding: 9px 16px;
+  border-color: transparent;
+  background: linear-gradient(135deg, #8558f4, #3967f5);
+  color: white;
+  font-weight: 700;
+}
+
+.ki-workspace .ki-disclaimer {
+  margin: 8px auto 0;
+  color: #77839a;
+  font-size: 11px;
+  text-align: center;
+}
+
+.ki-workspace .ki-welcome {
+  min-height: calc(100dvh - 250px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-top: 0;
+}
+
+.ki-workspace .ki-profile {
+  margin-top: auto;
+}
+
+@media (max-width: 900px) {
+  .ki-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ki-workspace .ki-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 51;
+    width: 280px;
+    transform: translateX(-100%);
+    transition: transform 180ms ease;
+    box-shadow: 18px 0 50px rgba(0, 0, 0, 0.35);
+  }
+
+  .ki-workspace .ki-sidebar.ki-open {
+    transform: translateX(0);
+  }
+
+  .ki-workspace .ki-mobile {
+    display: inline-flex;
+  }
+
+  .ki-workspace .ki-content {
+    padding: 20px 16px 32px;
+  }
+
+  .ki-workspace .ki-composer-area {
+    padding: 10px 12px 12px;
+  }
+}
+
+@media (max-width: 560px) {
+  .ki-workspace .ki-header {
+    min-height: 62px;
+  }
+
+  .ki-workspace .ki-welcome {
+    min-height: auto;
+    padding: 42px 0 18px;
+  }
+
+  .ki-workspace .ki-welcome .ki-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ki-workspace form.ki-composer .ki-actions .ki-muted {
+    display: none;
+  }
+}

@@ -5,6 +5,7 @@ import { normalizeWebResults } from "../src/ai/retrieval/webSearch.js";
 import { rerank } from "../src/ai/retrieval/reranker.js";
 import { createEvidencePack, flattenEvidence } from "../src/ai/context/evidencePack.js";
 import { composeAnswer } from "../src/ai/response/answerComposer.js";
+import { assessEvidenceConsensus } from "../src/ai/verification/evidenceConsensus.js";
 
 function withEnv(values, fn) {
   const before = Object.fromEntries(Object.keys(values).map((key) => [key, process.env[key]]));
@@ -91,4 +92,34 @@ test("web normalization rewards relevant fresh authoritative sources", () => {
   assert.ok(react.score > generic.score);
   assert.ok(react.relevance >= generic.relevance);
   assert.ok(react.freshness > generic.freshness);
+});
+
+
+test("evidence consensus detects independent corroboration", () => {
+  const consensus = assessEvidenceConsensus([
+    { sourceType: "web", domain: "react.dev", url: "https://react.dev/a", text: "React version 19.2", trust: 0.95 },
+    { sourceType: "web", domain: "github.com", url: "https://github.com/facebook/react/releases", text: "React version 19.2 release", trust: 0.85 },
+  ], "React latest version");
+  assert.equal(consensus.independentSources, 2);
+  assert.equal(consensus.corroborated, true);
+  assert.equal(consensus.conflicts.length, 0);
+});
+
+test("evidence consensus detects conflicting version signals", () => {
+  const consensus = assessEvidenceConsensus([
+    { sourceType: "web", domain: "react.dev", url: "https://react.dev/a", text: "Current React version 19.2", trust: 0.95 },
+    { sourceType: "web", domain: "example.org", url: "https://example.org/a", text: "Current React version 18.3", trust: 0.62 },
+  ], "React latest version");
+  assert.equal(consensus.conflicts.length, 1);
+  assert.equal(consensus.conflicts[0].kind, "version");
+});
+
+test("answer composer warns on single-source research", () => {
+  const composed = composeAnswer("Phiên bản hiện tại là X.", {
+    analysis: { intent: "RESEARCH", needsFreshInformation: true, complexity: "HIGH" },
+    confidence: { level: "HIGH" },
+    evidence: [{ sourceType: "web", url: "https://example.org/a", title: "Example" }],
+    consensus: { singleSource: true, conflicts: [] },
+  });
+  assert.match(composed.content, /một nguồn độc lập/i);
 });

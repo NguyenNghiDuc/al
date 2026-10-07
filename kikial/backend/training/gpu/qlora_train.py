@@ -18,7 +18,7 @@ from trl import SFTTrainer
 
 def parse_args():
     p = argparse.ArgumentParser(description="Kikial QLoRA GPU trainer")
-    p.add_argument("--model", default=os.getenv("MODEL_NAME", "meta-llama/Llama-3.2-3B-Instruct"))
+    p.add_argument("--model", default=os.getenv("MODEL_NAME", "Qwen/Qwen2.5-7B-Instruct"))
     p.add_argument("--dataset", default="training/exports/kikial-sft-v1.sft.jsonl")
     p.add_argument("--output", default="training/models/kikial-qlora")
     p.add_argument("--epochs", type=float, default=3.0)

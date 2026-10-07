@@ -99,6 +99,21 @@ export const evalCases = [
   { id: "v2-context-code", group: "follow-up", message: "Viết ví dụ cho nó.", expect: /Promise|JavaScript|ví dụ|code/i, history: [{ role: "user", content: "Promise trong JavaScript là gì?" }] },
   { id: "v2-graph-flutter", group: "graph-retrieval", message: "Flutter dùng ngôn ngữ gì?", expect: /Dart/i },
   { id: "v2-unknown-fact", group: "hallucination", message: "Khẳng định một fact riêng tư không có trong context.", reject: /chắc chắn|khẳng định/i },
+  { id: "v10-code-prime", group: "hard-coding", message: "Viết hàm JavaScript kiểm tra số nguyên tố.", expect: /isPrime|nguyên tố|prime/i, reject: /function add\s*\(/i },
+  { id: "v10-code-python-binary", group: "hard-coding", message: "Viết Python tìm kiếm nhị phân, không thấy trả -1.", expect: /binary|while|return -1|Python/i },
+  { id: "v10-code-sql-join", group: "hard-coding", message: "Viết SQL JOIN bảng customers và orders theo customer_id.", expect: /JOIN|customer_id/i },
+  { id: "v10-short-code", group: "short-prompt", message: "code", expect: /code|viết|ngôn ngữ|JavaScript|Python/i, reject: /chưa có đủ thông tin để trả lời chính xác/i },
+  { id: "v10-short-topic", group: "short-prompt", message: "music box", expect: /music|hộp nhạc|nhạc/i },
+  { id: "v10-network-cidr", group: "reasoning", message: "192.168.1.210/27: network, broadcast và dải host là gì?", expect: /192\.168\.1\.192|192\.168\.1\.223|193|222/i },
+  { id: "v10-accounting-entry", group: "reasoning", message: "Mua hàng 10 triệu chưa VAT 10%, chưa thanh toán. Định khoản giúp tôi.", expect: /156|1331|331|11\.000\.000|11000000/i },
+  { id: "v10-explain-why", group: "reasoning", message: "Vì sao tìm số nguyên tố chỉ cần kiểm tra đến căn bậc hai của n?", expect: /căn|sqrt|ước|nhân/i },
+  { id: "v10-followup-convert", group: "follow-up", message: "Đổi sang Python đi.", expect: /def |Python|return/i, history: [{ role: "user", content: "Viết hàm JavaScript kiểm tra số nguyên tố." }, { role: "assistant", content: "function isPrime(n) { /* ... */ }" }] },
+  { id: "v10-followup-explain", group: "follow-up", message: "Giải thích từng dòng.", expect: /dòng|n < 2|for|return/i, history: [{ role: "user", content: "Viết hàm JavaScript kiểm tra số nguyên tố." }, { role: "assistant", content: "function isPrime(n){ if(n<2)return false; for(let i=2;i*i<=n;i++){if(n%i===0)return false;} return true;}" }] },
+  { id: "v10-typo-vi", group: "no-diacritic", message: "huaan luyen tiep di", expect: /huấn luyện|training|tiếp|dữ liệu/i },
+  { id: "v10-debug-port", group: "debugging", message: "EADDRINUSE port 4000 là gì và sửa sao?", expect: /4000|port|process|PID|EADDRINUSE/i },
+  { id: "v10-debug-repeat", group: "debugging", message: "Tôi đã restart rồi mà vẫn lỗi, đừng lặp lại cách cũ.", expect: /kiểm tra|log|nguyên nhân|bước tiếp/i },
+  { id: "v10-fresh-honesty", group: "freshness", message: "Phiên bản React mới nhất hiện tại là gì?", expect: /React|nguồn|web|xác minh|hiện tại|version/i },
+  { id: "v10-private-honesty", group: "hallucination", message: "Số dư tài khoản ngân hàng của tôi hiện tại là bao nhiêu?", reject: /chắc chắn|là \d+[.,]?\d*/i },
 ];
 
 if (evalCases.length < 50) throw new Error(`Evaluation dataset requires 50 cases, got ${evalCases.length}`);

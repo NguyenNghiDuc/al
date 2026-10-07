@@ -26,17 +26,17 @@ export function analyzeQuery(message, history = []) {
   const greeting = GREETING_RE.test(text);
   const looksLikeQuestion = QUESTION_RE.test(text);
   const studyTopic = STUDY_TOPIC_RE.test(text);
-  const topicOnly = words.length <= 2 && (coding || studyTopic);
+  const topicOnly = words.length <= 2 && words.length > 0 && !greeting;
 
   let intent = "SIMPLE_CHAT";
   if (math) intent = "MATH";
   else if (memory) intent = "MEMORY";
   else if (document) intent = "DOCUMENT";
   else if (planning) intent = "PLANNING";
-  else if (coding) intent = "CODING";
   else if (research) intent = "RESEARCH";
+  else if (coding) intent = "CODING";
   else if (followUp) intent = "MULTI_STEP";
-  else if (studyTopic || (!greeting && (looksLikeQuestion || words.length > 3))) intent = "FACTUAL";
+  else if (!greeting && words.length > 0) intent = "FACTUAL";
 
   const complexity = planning || research || words.length > 25
     ? "HIGH"

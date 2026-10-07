@@ -260,7 +260,7 @@ export async function orchestrate({
     }
   }
 
-  let verification = verifyResponse({ question: message, answer, analysis, retrieval: retrievedChunks, toolResult });
+  let verification = verifyResponse({ question: message, answer, analysis, retrieval: selectedEvidence, toolResult });
 
   const selfCritiqueEnabled = String(process.env.AI_SELF_CRITIQUE || "true").toLowerCase() !== "false";
   const shouldSelfCritique = selfCritiqueEnabled
@@ -285,7 +285,7 @@ export async function orchestrate({
       if (revisedContent) {
         answer = revisedContent;
         modelId = revised?.modelId || revised?.model || modelId;
-        verification = verifyResponse({ question: message, answer, analysis, retrieval: retrievedChunks, toolResult });
+        verification = verifyResponse({ question: message, answer, analysis, retrieval: selectedEvidence, toolResult });
       }
     } catch (error) {
       console.warn(`[Kikial][${traceId}] self-critique degraded: ${error.code || error.message}`);
@@ -312,7 +312,7 @@ export async function orchestrate({
       if (repairedContent) {
         answer = repairedContent;
         modelId = repaired?.modelId || repaired?.model || modelId;
-        verification = verifyResponse({ question: message, answer, analysis, retrieval: retrievedChunks, toolResult });
+        verification = verifyResponse({ question: message, answer, analysis, retrieval: selectedEvidence, toolResult });
       }
     } catch (error) {
       console.warn(`[Kikial][${traceId}] repair degraded: ${error.code || error.message}`);
@@ -320,7 +320,7 @@ export async function orchestrate({
   }
 
   const confidence = calculateConfidence({
-    retrieval: retrievedChunks,
+    retrieval: selectedEvidence,
     memory,
     toolSuccess: Boolean(toolResult),
     verified: Boolean(retrievalKnowledge[0]?.verified),

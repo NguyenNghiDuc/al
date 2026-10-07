@@ -31,14 +31,26 @@ export function chooseStrongestInstalledModel(models = [], fallback = "llama3.2:
   return ranked[0]?.name || fallback;
 }
 
-async function resolveOllamaModel(baseUrl, configuredModel) {
-  if (String(process.env.AI_MODEL_AUTO || "true").toLowerCase() === "false") return configuredModel;
-  const cacheKey = `${baseUrl}:${configuredModel}`;
+export function selectModelHint(analysis = {}, env = process.env) {
+  if (analysis.intent === "CODING" && env.AI_CODING_MODEL) return env.AI_CODING_MODEL;
+  if ((analysis.intent === "RESEARCH" || analysis.complexity === "HIGH") && env.AI_REASONING_MODEL) return env.AI_REASONING_MODEL;
+  if (analysis.intent === "SIMPLE_CHAT" && env.AI_FAST_MODEL) return env.AI_FAST_MODEL;
+  return "";
+}
+
+async function resolveOllamaModel(baseUrl, configuredModel, preferredModel = "") {
+  const auto = String(process.env.AI_MODEL_AUTO || "true").toLowerCase() !== "false";
+  if (!auto && !preferredModel) return configuredModel;
+  const cacheKey = `${baseUrl}:${configuredModel}:${preferredModel}:${auto}`;
   if (autoModelCache.key === cacheKey && autoModelCache.expiresAt > Date.now()) return autoModelCache.model;
   try {
     const response = await fetch(`${String(baseUrl).replace(/\/$/, "")}/api/tags`, { signal: AbortSignal.timeout(1800) });
     const data = await response.json().catch(() => ({}));
-    const model = response.ok ? chooseStrongestInstalledModel(data.models || [], configuredModel) : configuredModel;
+    if (!response.ok) return configuredModel;
+    const names = (data.models || []).map((item) => typeof item === "string" ? item : item?.name).filter(Boolean);
+    const preferred = String(preferredModel || "").trim();
+    const preferredInstalled = preferred && names.some((name) => name === preferred || name === `${preferred}:latest` || preferred === `${name}:latest`);
+    const model = preferredInstalled ? preferred : (auto ? chooseStrongestInstalledModel(names, configuredModel) : configuredModel);
     autoModelCache = { key: cacheKey, model, expiresAt: Date.now() + 60_000 };
     return model;
   } catch {
@@ -46,14 +58,20 @@ async function resolveOllamaModel(baseUrl, configuredModel) {
   }
 }
 
-export async function getModelProvider() {
+export async function getModelProvider({ analysis = {} } = {}) {
   const active = await getActiveModel();
   const providerName = normalizeProvider(active?.provider || process.env.AI_PROVIDER || "ollama");
   const defaultBase = providerName === "ollama" ? "http://127.0.0.1:11434" : "http://127.0.0.1:1234/v1";
   const defaultModel = providerName === "ollama" ? "llama3.2:3b" : "local-model";
-  const configuredModel = active?.baseModel || process.env.AI_MODEL || defaultModel;
+  const registryPinned = Boolean(active && active.id !== "ollama-default" && active.status === "ACTIVE");
+  const configuredModel = registryPinned
+    ? active.baseModel
+    : process.env.AI_MODEL || active?.baseModel || defaultModel;
   const baseUrl = active?.baseUrl || process.env.AI_BASE_URL || defaultBase;
-  const model = providerName === "ollama" && !active?.baseModel ? await resolveOllamaModel(baseUrl, configuredModel) : configuredModel;
+  const preferredModel = registryPinned ? "" : selectModelHint(analysis);
+  const model = providerName === "ollama"
+    ? (registryPinned ? configuredModel : await resolveOllamaModel(baseUrl, configuredModel, preferredModel))
+    : (preferredModel || configuredModel);
   const embeddingModel = active?.embeddingModel || process.env.AI_EMBEDDING_MODEL || (providerName === "ollama" ? "nomic-embed-text" : model);
   const apiKey = process.env.AI_API_KEY || "";
   const nextKey = `${active?.id || "environment"}:${providerName}:${model}:${baseUrl}:${embeddingModel}:${Boolean(apiKey)}`;

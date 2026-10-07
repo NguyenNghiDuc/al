@@ -76,7 +76,7 @@ Ví dụ: isPrime(7) → true, isPrime(10) → false.`;
 }
 
 async function modelAnswer({ question, analysis, context, history, hasEvidence = false }) {
-  const provider = await getModelProvider();
+  const provider = await getModelProvider({ analysis });
   const health = await provider.health();
   if (!health.online) return null;
   const result = await provider.generate({

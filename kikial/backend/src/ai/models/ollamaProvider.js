@@ -9,7 +9,7 @@ export class OllamaProvider extends ModelProvider {
     this.model = model || "llama3.2:3b";
     this.embeddingModel = embeddingModel || "nomic-embed-text";
     this.temperature = Number.isFinite(Number(temperature)) ? Number(temperature) : 0.3;
-    this.timeoutMs = Number(timeoutMs) || 30000;
+    this.timeoutMs = Math.max(Number(timeoutMs) || 120000, 60000);
   }
 
   async request(path, body, timeoutMs = this.timeoutMs) {

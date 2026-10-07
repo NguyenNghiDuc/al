@@ -10,15 +10,14 @@ from peft import LoraConfig, PeftModel, prepare_model_for_kbit_training
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
-    BitsAndBytesConfig,
-    TrainingArguments,
+    BitsAndBytesConfig
 )
-from trl import SFTTrainer
+from trl import SFTConfig, SFTTrainer
 
 
 def parse_args():
     p = argparse.ArgumentParser(description="Kikial QLoRA GPU trainer")
-    p.add_argument("--model", default=os.getenv("MODEL_NAME", "meta-llama/Llama-3.2-3B-Instruct"))
+    p.add_argument("--model", default=os.getenv("MODEL_NAME", "Qwen/Qwen2.5-7B-Instruct"))
     p.add_argument("--dataset", default="training/exports/kikial-sft-v1.sft.jsonl")
     p.add_argument("--output", default="training/models/kikial-qlora")
     p.add_argument("--epochs", type=float, default=3.0)
@@ -122,7 +121,7 @@ def main():
     out = Path(args.output)
     out.mkdir(parents=True, exist_ok=True)
 
-    training_args = TrainingArguments(
+    training_args = SFTConfig(
         output_dir=str(out),
         num_train_epochs=args.epochs,
         per_device_train_batch_size=args.batch_size,
@@ -141,6 +140,9 @@ def main():
         report_to="none",
         seed=args.seed,
         data_seed=args.seed,
+        dataset_text_field="text",
+        max_seq_length=args.max_seq_length,
+        packing=False,
     )
 
     trainer = SFTTrainer(
@@ -149,9 +151,6 @@ def main():
         peft_config=lora_config,
         args=training_args,
         processing_class=tokenizer,
-        dataset_text_field="text",
-        max_seq_length=args.max_seq_length,
-        packing=False,
     )
 
     print(json.dumps({

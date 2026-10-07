@@ -58,6 +58,21 @@ async function resolveOllamaModel(baseUrl, configuredModel, preferredModel = "")
   }
 }
 
+function createProvider({ providerName, baseUrl, model, embeddingModel, apiKey }) {
+  const common = {
+    baseUrl,
+    model,
+    embeddingModel,
+    temperature: process.env.AI_TEMPERATURE,
+    timeoutMs: process.env.AI_TIMEOUT_MS,
+  };
+  if (providerName === "ollama") return new OllamaProvider(common);
+  if (providerName === "openai-compatible") return new OpenAICompatibleProvider({ ...common, apiKey });
+  const error = new Error(`Unsupported model provider: ${providerName}`);
+  error.code = "UNSUPPORTED_MODEL_PROVIDER";
+  throw error;
+}
+
 export async function getModelProvider({ analysis = {} } = {}) {
   const active = await getActiveModel();
   const providerName = normalizeProvider(active?.provider || process.env.AI_PROVIDER || "ollama");
@@ -78,26 +93,47 @@ export async function getModelProvider({ analysis = {} } = {}) {
 
   if (provider && providerKey === nextKey) return provider;
 
-  const common = {
-    baseUrl,
-    model,
-    embeddingModel,
-    temperature: process.env.AI_TEMPERATURE,
-    timeoutMs: process.env.AI_TIMEOUT_MS,
-  };
-
-  if (providerName === "ollama") {
-    provider = new OllamaProvider(common);
-  } else if (providerName === "openai-compatible") {
-    provider = new OpenAICompatibleProvider({ ...common, apiKey });
-  } else {
-    const error = new Error(`Unsupported model provider: ${providerName}`);
-    error.code = "UNSUPPORTED_MODEL_PROVIDER";
-    throw error;
-  }
-
+  provider = createProvider({ providerName, baseUrl, model, embeddingModel, apiKey });
   providerKey = nextKey;
   return provider;
+}
+
+export async function getModelProviderCandidates({ analysis = {} } = {}) {
+  const primary = await getModelProvider({ analysis });
+  const active = await getActiveModel();
+  const registryPinned = Boolean(active && active.id !== "ollama-default" && active.status === "ACTIVE");
+  if (normalizeProvider(active?.provider || process.env.AI_PROVIDER || "ollama") !== "ollama") return [primary];
+
+  const baseUrl = active?.baseUrl || process.env.AI_BASE_URL || "http://127.0.0.1:11434";
+  const embeddingModel = active?.embeddingModel || process.env.AI_EMBEDDING_MODEL || "nomic-embed-text";
+  const apiKey = process.env.AI_API_KEY || "";
+  const configured = registryPinned ? active.baseModel : (process.env.AI_MODEL || active?.baseModel || "llama3.2:3b");
+  const explicit = String(process.env.AI_FALLBACK_MODELS || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  let installed = [];
+  try {
+    const response = await fetch(`${String(baseUrl).replace(/\/$/, "")}/api/tags`, { signal: AbortSignal.timeout(1800) });
+    const data = await response.json().catch(() => ({}));
+    if (response.ok) installed = (data.models || []).map((item) => typeof item === "string" ? item : item?.name).filter(Boolean);
+  } catch {}
+
+  const rankedInstalled = installed
+    .filter((name) => !/embed|embedding|nomic|bge|e5-|minilm/i.test(name))
+    .map((name) => ({ name, score: modelStrength(name) }))
+    .sort((a, b) => b.score - a.score)
+    .map((item) => item.name);
+
+  const orderedNames = [...new Set([primary.model, ...explicit, configured, ...rankedInstalled].filter(Boolean))];
+  const available = orderedNames.filter((name) => !installed.length || installed.some((installedName) =>
+    installedName === name || installedName === `${name}:latest` || name === `${installedName}:latest`
+  ));
+
+  return available.slice(0, 4).map((modelName, index) => index === 0 && modelName === primary.model
+    ? primary
+    : createProvider({ providerName: "ollama", baseUrl, model: modelName, embeddingModel, apiKey }));
 }
 
 export function resetModelProvider() {

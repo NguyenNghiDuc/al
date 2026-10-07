@@ -5,7 +5,7 @@ const normalize = (value) => String(value || "")
   .toLowerCase()
   .trim();
 
-const GREETING_RE = /^(?:xin chao|chao|hello|hi|hey|alo|cam on|thanks|thank you|ok|okay|uh|u|ừ|ừm|hmm)[!.?\s]*$/i;
+const GREETING_RE = /^(?:xin chao|chao|hello|hi|hey|alo|cam on|thanks|thank you|ok|okay|uh|u|ừ|ừm|hmm)(?:\s+kikial)?[!.?\s]*$/i;
 const QUESTION_RE = /(?:\?|\b(?:la gi|tai sao|vi sao|the nao|nhu the nao|khi nao|o dau|ai la|bao nhieu|khac gi|so sanh|co nen|lam sao|cach nao|what|why|how|when|where|who|which)\b)/i;
 const FRESH_RE = /(?:moi nhat|hom nay|hien tai|bay gio|gan day|cap nhat|phien ban moi|gia hien tai|tin moi|latest|today|current|recent|update|news|internet|web)/i;
 const FOLLOW_UP_RE = /(?:\bno\b|\bdo\b|\bvay\b|\btiep\b|vi du cho|cai nay|cai do|phan kia|lam tiep|noi tiep|giai thich them|them nua)/i;

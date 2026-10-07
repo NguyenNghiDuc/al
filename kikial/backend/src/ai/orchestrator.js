@@ -8,6 +8,7 @@ import { executeTool } from "./tools/index.js";
 import { getModelProviderCandidates } from "./models/modelRouter.js";
 import { calculateConfidence } from "./verification/confidence.js";
 import { verifyResponse } from "./verification/verifier.js";
+import { assessEvidenceConsensus, consensusPrompt } from "./verification/evidenceConsensus.js";
 import { createPlan } from "./planner.js";
 import { expandQuery } from "./query/queryRewriter.js";
 import { searchGraph } from "./graph/index.js";
@@ -232,8 +233,9 @@ export async function orchestrate({
     toolResults: toolResult ? [toolResult] : [],
   });
   const selectedEvidence = [...evidencePack.knowledge, ...evidencePack.documents, ...evidencePack.experience];
+  const evidenceConsensus = assessEvidenceConsensus(selectedEvidence, queryPlan.standalone);
   const retrievalKnowledge = retrievedChunks.filter((item) => item.sourceType !== "document" && item.sourceType !== "experience");
-  const context = buildContext({
+  const baseContext = buildContext({
     question: message,
     analysis,
     memory,
@@ -243,6 +245,10 @@ export async function orchestrate({
     summary: conversationSummary,
     history: safeHistory,
   });
+  const consensusInstruction = consensusPrompt(evidenceConsensus);
+  const context = consensusInstruction
+    ? `${baseContext}\n\n## SOURCE CONSENSUS\n${consensusInstruction}`
+    : baseContext;
 
   let answer = deterministicAnswer(message, analysis, memory, retrievalKnowledge, toolResult, documentEvidence, currentCandidates, queryPlan);
   let source = toolResult
@@ -346,7 +352,7 @@ export async function orchestrate({
     verified: Boolean(retrievalKnowledge[0]?.verified),
     answer,
   });
-  const composed = composeAnswer(answer, { analysis, confidence, evidence: flattenEvidence(evidencePack) });
+  const composed = composeAnswer(answer, { analysis, confidence, evidence: flattenEvidence(evidencePack), consensus: evidenceConsensus });
   const sources = selectedEvidence.map(({ sourceId, sourceType, filename, chunkId, score, lessonId, confidence: lessonConfidence, provenance }) => ({
     sourceId,
     sourceType,
@@ -409,6 +415,7 @@ export async function orchestrate({
     plan: analysis.complexity === "HIGH" ? createPlan(message, analysis) : null,
     confidence,
     verification,
+    consensus: evidenceConsensus,
     modelUsed,
     evidence: publicEvidence,
     retrieval: {

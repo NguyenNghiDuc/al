@@ -97,7 +97,11 @@ export async function retrieveEvidence({ userId, query, queries = [], limit = 5,
   const documentItems = await Promise.all(searchQueries.map((term) => documentRetriever(userId, term, limit * 3)));
   const lessonItems = await Promise.all(searchQueries.map((term) => lessonRetriever(term, limit * 3)));
   const experienceItems = await experienceRetriever(query, { userId, limit: limit * 3 });
-  const webItems = shouldSearchWeb(query) ? await webRetriever(query, Math.min(limit * 2, 10)) : [];
+  const webQueries = shouldSearchWeb(query) ? searchQueries.slice(0, 3) : [];
+  const webBatches = webQueries.length
+    ? await Promise.all(webQueries.map((term) => webRetriever(term, Math.min(limit * 2, 10))))
+    : [];
+  const webItems = webBatches.flat();
   const candidates = [
     ...knowledgeItems.flat().map((item) => ({ ...item, sourceId: item.id, sourceType: item.store === "learned" && item.verified ? "verified_lesson" : "knowledge", text: item.answer, similarity: item.similarity || item.score || 0 })),
     ...documentItems.flat().map((item) => ({ ...item, id: item.chunkId || `${item.documentId}:${item.chunkIndex}`, sourceId: item.documentId, sourceType: "document", filename: item.filename, chunkId: item.chunkId || `${item.documentId}:${item.chunkIndex}`, question: item.filename, answer: item.text, similarity: item.score })),

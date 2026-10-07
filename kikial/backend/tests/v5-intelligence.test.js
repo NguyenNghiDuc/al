@@ -76,3 +76,19 @@ test("model hint routing prefers specialized models by task", () => {
   assert.equal(selectModelHint({ intent: "SIMPLE_CHAT", complexity: "LOW" }, env), "llama3.2:3b");
   assert.equal(selectModelHint({ intent: "FACTUAL", complexity: "LOW" }, env), "");
 });
+
+
+test("web normalization rewards relevant fresh authoritative sources", () => {
+  const now = new Date().toISOString();
+  const results = normalizeWebResults([
+    { title: "General JavaScript discussion", url: "https://example.org/post", content: "Unrelated notes", date: "2020-01-01" },
+    { title: "React release notes", url: "https://react.dev/blog/release", content: "Current React release information", date: now },
+  ], "React latest release", 5);
+  const react = results.find((item) => item.domain === "react.dev");
+  const generic = results.find((item) => item.domain === "example.org");
+  assert.ok(react);
+  assert.ok(generic);
+  assert.ok(react.score > generic.score);
+  assert.ok(react.relevance >= generic.relevance);
+  assert.ok(react.freshness > generic.freshness);
+});

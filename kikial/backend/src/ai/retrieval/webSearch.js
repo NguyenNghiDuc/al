@@ -30,9 +30,44 @@ function hostnameMatches(hostname, rule) {
 
 function domainTrust(hostname) {
   const host = String(hostname || "").toLowerCase();
-  const highTrust = [".gov", ".gov.vn", ".edu", ".edu.vn", "who.int", "worldbank.org", "oecd.org", "developer.mozilla.org", "docs.python.org", "nodejs.org", "react.dev", "flutter.dev", "dart.dev", "github.com"];
-  if (highTrust.some((domain) => host.endsWith(domain) || host === domain.replace(/^\./, ""))) return 0.9;
-  return 0.65;
+  const primary = [
+    ".gov", ".gov.vn", ".edu", ".edu.vn", "who.int", "worldbank.org", "oecd.org",
+    "developer.mozilla.org", "docs.python.org", "nodejs.org", "react.dev", "flutter.dev",
+    "dart.dev", "kotlinlang.org", "docs.oracle.com", "learn.microsoft.com",
+  ];
+  const strong = ["github.com", "npmjs.com", "pypi.org", "ietf.org", "w3.org", "postgresql.org"];
+  if (primary.some((domain) => host.endsWith(domain) || host === domain.replace(/^\./, ""))) return 0.95;
+  if (strong.some((domain) => host.endsWith(domain) || host === domain.replace(/^\./, ""))) return 0.85;
+  return 0.62;
+}
+
+function normalizeText(value) {
+  return String(value || "").normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+}
+
+function queryRelevance(query, title, content) {
+  const q = new Set(normalizeText(query).split(/\s+/).filter((item) => item.length > 2));
+  if (!q.size) return 0.5;
+  const titleText = normalizeText(title);
+  const bodyText = normalizeText(content);
+  let hit = 0;
+  for (const term of q) {
+    if (titleText.includes(term)) hit += 1;
+    else if (bodyText.includes(term)) hit += 0.35;
+  }
+  return Math.max(0, Math.min(1, hit / q.size));
+}
+
+function freshnessScore(value) {
+  if (!value) return 0.5;
+  const time = Date.parse(value);
+  if (!Number.isFinite(time)) return 0.5;
+  const ageDays = Math.max(0, (Date.now() - time) / 86_400_000);
+  if (ageDays <= 2) return 1;
+  if (ageDays <= 14) return 0.9;
+  if (ageDays <= 90) return 0.75;
+  if (ageDays <= 365) return 0.6;
+  return 0.35;
 }
 
 export function webSearchEnabled() {
@@ -70,8 +105,12 @@ export function normalizeWebResults(results = [], query = "", limit = 5) {
     const content = String(item?.content || item?.snippet || title || "").trim();
     if (!title && !content) continue;
     const trust = domainTrust(hostname);
-    const score = Math.max(0.35, Math.min(0.95, trust - selected.length * 0.04));
     const publishedAt = item?.publishedDate || item?.published_at || item?.date || null;
+    const relevance = queryRelevance(query, title, content);
+    const freshness = freshnessScore(publishedAt);
+    const score = Math.max(0.2, Math.min(0.98,
+      trust * 0.45 + relevance * 0.4 + freshness * 0.15
+    ));
 
     seenUrls.add(canonical);
     domainCounts.set(hostname, count + 1);
@@ -88,6 +127,8 @@ export function normalizeWebResults(results = [], query = "", limit = 5) {
       publishedAt,
       timestamp: publishedAt,
       trust,
+      relevance,
+      freshness,
       score,
       similarity: score,
       verified: false,

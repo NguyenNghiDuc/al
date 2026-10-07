@@ -46,7 +46,7 @@ huggingface-cli login
 python training/gpu/qlora_train.py \
   --model Qwen/Qwen2.5-7B-Instruct \
   --dataset training/exports/kikial-sft-v1.sft.jsonl \
-  --output training/models/kikial-llama32-3b \
+  --output training/models/kikial-qwen25-7b \
   --epochs 3 \
   --batch-size 1 \
   --grad-accum 8 \
@@ -59,7 +59,7 @@ To also save a merged Hugging Face model:
 python training/gpu/qlora_train.py \
   --model Qwen/Qwen2.5-7B-Instruct \
   --dataset training/exports/kikial-sft-v1.sft.jsonl \
-  --output training/models/kikial-llama32-3b \
+  --output training/models/kikial-qwen25-7b \
   --epochs 3 \
   --merge
 ```
@@ -67,13 +67,13 @@ python training/gpu/qlora_train.py \
 The adapter is saved under:
 
 ```text
-training/models/kikial-llama32-3b/adapter
+training/models/kikial-qwen25-7b/adapter
 ```
 
 The merged model, when `--merge` is used, is saved under:
 
 ```text
-training/models/kikial-llama32-3b/merged
+training/models/kikial-qwen25-7b/merged
 ```
 
 ## 4. Important evaluation rule
@@ -89,6 +89,32 @@ Run `npm run training:export:eval` and keep validation/test examples out of trai
 
 ## 5. Ollama deployment
 
-Ollama normally consumes GGUF models. After training, convert the merged Hugging Face model to GGUF with a current llama.cpp conversion workflow, quantize it, create an Ollama Modelfile, and benchmark it before replacing the current `llama3.2:3b` runtime model.
+After training with `--merge`, use the bundled deployment script:
 
-Do not claim the Ollama model has been fine-tuned until that conversion/deployment step is complete.
+```bash
+chmod +x training/gpu/export_ollama.sh
+training/gpu/export_ollama.sh \
+  training/models/kikial-qwen25-7b/merged \
+  kikial:7b \
+  ../llama.cpp
+```
+
+The script converts the merged Hugging Face model to GGUF, quantizes to Q4_K_M, creates an Ollama model, and runs a smoke test.
+
+Then point runtime at the new model:
+
+```env
+AI_PROVIDER=ollama
+AI_MODEL=kikial:7b
+AI_MODEL_AUTO=false
+AI_TIMEOUT_MS=120000
+```
+
+Restart the backend and run the existing application eval:
+
+```bash
+npm test
+npm run eval
+```
+
+Do not promote the new model only because training completed. Keep it only if held-out and application-level evaluation improve without important regressions.

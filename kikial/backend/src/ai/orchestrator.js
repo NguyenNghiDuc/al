@@ -262,6 +262,36 @@ export async function orchestrate({
 
   let verification = verifyResponse({ question: message, answer, analysis, retrieval: retrievedChunks, toolResult });
 
+  const selfCritiqueEnabled = String(process.env.AI_SELF_CRITIQUE || "true").toLowerCase() !== "false";
+  const shouldSelfCritique = selfCritiqueEnabled
+    && modelUsed
+    && verification.passed
+    && ["LEVEL_4", "LEVEL_5"].includes(reasoning.level)
+    && modelCalls < reasoning.budget.maxModelCalls
+    && process.env.AI_DISABLE_MODEL !== "true";
+
+  if (shouldSelfCritique) {
+    const critiqueContext = `${context}\n\n## QUALITY REVIEW\nCurrent draft:\n${String(answer).slice(0, 6000)}\n\nReturn only an improved final answer. Check correctness, whether every part of the user's request was answered, contradictions, unsupported claims, and unnecessary generic filler. Preserve useful citations/evidence boundaries. Do not reveal internal reasoning.`;
+    try {
+      const revised = await generateAnswer({
+        question: message,
+        analysis,
+        context: critiqueContext,
+        history: safeHistory,
+        hasEvidence: selectedEvidence.length > 0,
+      });
+      modelCalls += 1;
+      const revisedContent = typeof revised === "string" ? revised : revised?.content;
+      if (revisedContent) {
+        answer = revisedContent;
+        modelId = revised?.modelId || revised?.model || modelId;
+        verification = verifyResponse({ question: message, answer, analysis, retrieval: retrievedChunks, toolResult });
+      }
+    } catch (error) {
+      console.warn(`[Kikial][${traceId}] self-critique degraded: ${error.code || error.message}`);
+    }
+  }
+
   if (
     modelUsed
     && !verification.passed

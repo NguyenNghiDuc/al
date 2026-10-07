@@ -30,3 +30,16 @@ test("fresh research still requires evidence or uncertainty", () => {
   });
   assert.equal(result.passed, false);
 });
+
+test("short unknown topics are not misclassified as greetings", () => {
+  const analysis = analyzeQuery("music box");
+  assert.equal(analysis.intent, "FACTUAL");
+  assert.equal(analysis.topicOnly, true);
+});
+
+test("fresh coding questions route to research rather than stale coding knowledge", () => {
+  const analysis = analyzeQuery("React version mới nhất hiện tại?");
+  assert.equal(analysis.intent, "RESEARCH");
+  assert.equal(analysis.needsFreshInformation, true);
+  assert.equal(analysis.needsRetrieval, true);
+});

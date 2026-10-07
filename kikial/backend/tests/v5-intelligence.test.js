@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { chooseStrongestInstalledModel } from "../src/ai/models/modelRouter.js";
+import { chooseStrongestInstalledModel, selectModelHint } from "../src/ai/models/modelRouter.js";
 import { normalizeWebResults } from "../src/ai/retrieval/webSearch.js";
 import { rerank } from "../src/ai/retrieval/reranker.js";
 import { createEvidencePack, flattenEvidence } from "../src/ai/context/evidencePack.js";
@@ -61,4 +61,18 @@ test("web provenance survives evidence packing and becomes a visible citation", 
   const composed = composeAnswer("Câu trả lời có nguồn.", { analysis: { complexity: "LOW" }, confidence: { level: "HIGH" }, evidence });
   assert.match(composed.content, /Nguồn tham khảo:/);
   assert.match(composed.content, /https:\/\/example\.org\/a/);
+});
+
+
+test("model hint routing prefers specialized models by task", () => {
+  const env = {
+    AI_CODING_MODEL: "qwen2.5-coder:7b",
+    AI_REASONING_MODEL: "qwen2.5:14b",
+    AI_FAST_MODEL: "llama3.2:3b",
+  };
+  assert.equal(selectModelHint({ intent: "CODING", complexity: "MEDIUM" }, env), "qwen2.5-coder:7b");
+  assert.equal(selectModelHint({ intent: "RESEARCH", complexity: "HIGH" }, env), "qwen2.5:14b");
+  assert.equal(selectModelHint({ intent: "FACTUAL", complexity: "HIGH" }, env), "qwen2.5:14b");
+  assert.equal(selectModelHint({ intent: "SIMPLE_CHAT", complexity: "LOW" }, env), "llama3.2:3b");
+  assert.equal(selectModelHint({ intent: "FACTUAL", complexity: "LOW" }, env), "");
 });

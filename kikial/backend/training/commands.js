@@ -7,7 +7,7 @@ import { candidatesPath, datasetPath, manifestPath, readJsonl, validateExamples,
 import { DATASET_VERSION, normalizeExample } from "./schema.js";
 import { privacyCheck } from "./privacy.js";
 import { generateSyntheticExamples } from "./synthetic/generator.js";
-import { getActiveModel, listModels, promoteModel, rollbackModel } from "../src/ai/models/modelRegistry.js";
+import { getActiveModel, listModels, promoteModel, rollbackModel, updateModelBenchmark } from "../src/ai/models/modelRegistry.js";
 
 const trainingRoot = join(fileURLToPath(new URL("./", import.meta.url)));
 const reportPath = process.env.EVAL_REPORT || join(trainingRoot, "../evals/reports/after-v3.json");
@@ -217,6 +217,49 @@ async function benchmark() {
   }, null, 2));
 }
 
+async function evaluatePromotionGate(report) {
+  const overall = Number(report.passRate);
+  const minOverall = Number(process.env.PROMOTION_MIN_PASS_RATE || 0.85);
+  const minGroup = Number(process.env.PROMOTION_MIN_GROUP_RATE || 0.7);
+  const groups = Object.entries(report.groups || {});
+  const weakGroups = groups
+    .map(([name, value]) => ({ name, rate: Number(value?.passed || 0) / Math.max(Number(value?.total || 0), 1) }))
+    .filter((item) => item.rate < minGroup);
+  const criticalFailures = (report.failedCases || []).filter((item) => ["hallucination", "security", "math", "tool-use"].includes(item.group));
+  const passed = Number.isFinite(overall)
+    && overall >= minOverall
+    && weakGroups.length === 0
+    && criticalFailures.length === 0;
+  return { passed, overall, minOverall, minGroup, weakGroups, criticalFailures: criticalFailures.map((item) => item.id) };
+}
+
+async function modelAutoPromote() {
+  const id = process.argv[3];
+  if (!id) {
+    console.error("Usage: npm run model:auto-promote -- <candidate-id>");
+    process.exitCode = 1;
+    return;
+  }
+  const report = await readReport();
+  const gate = await evaluatePromotionGate(report);
+  const benchmark = {
+    evaluatedAt: new Date().toISOString(),
+    report: reportPath,
+    passRate: report.passRate ?? null,
+    averageLatency: report.averageLatency ?? null,
+    groups: report.groups || {},
+    gate,
+  };
+  await updateModelBenchmark(id, benchmark);
+  if (!gate.passed) {
+    console.error(JSON.stringify({ ok: false, promoted: false, id, gate }, null, 2));
+    process.exitCode = 2;
+    return;
+  }
+  const promoted = await promoteModel(id, { passed: true });
+  console.log(JSON.stringify({ ok: true, promoted: true, model: promoted, gate }, null, 2));
+}
+
 async function modelList() { console.log(JSON.stringify(await listModels(), null, 2)); }
 async function modelPromote() {
   const id = process.argv[3];
@@ -245,6 +288,7 @@ else if (command === "improvement:report") await improvementReport();
 else if (command === "benchmark:model") await benchmark();
 else if (command === "model:list") await modelList();
 else if (command === "model:promote") await modelPromote();
+else if (command === "model:auto-promote") await modelAutoPromote();
 else if (command === "model:rollback") await modelRollback();
 else if (command === "training:run") await train();
 else { console.error(`Unknown command: ${command}`); process.exitCode = 1; }

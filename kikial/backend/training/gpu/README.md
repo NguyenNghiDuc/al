@@ -4,8 +4,8 @@ This path performs real weight adaptation through LoRA/QLoRA. It is different fr
 
 ## Recommended GPU
 
-- 16 GB VRAM: workable for a 3B model with 4-bit QLoRA and batch size 1.
-- 24 GB+ VRAM: more comfortable and allows larger sequence lengths/batches.
+- 16 GB VRAM: use the 3B fallback if the 7B model does not fit comfortably.
+- 24 GB+ VRAM: recommended for Qwen2.5-7B-Instruct with 4-bit QLoRA.
 - NVIDIA CUDA GPU is required by this script.
 
 ## 1. Prepare the reviewed dataset
@@ -22,7 +22,7 @@ npm run training:export:sft
 Expected dataset:
 
 ```text
-training/exports/kikial-sft-v1.sft.jsonl
+training/exports/kikial-sft-v1.sft.jsonl (train split only)
 ```
 
 ## 2. Install GPU dependencies
@@ -34,7 +34,7 @@ python -m pip install -U pip
 pip install -r training/gpu/requirements-gpu.txt
 ```
 
-For gated Meta Llama weights, log in to Hugging Face and make sure the account has accepted the model license:
+Qwen2.5-7B-Instruct is the recommended default. If you switch to a gated model such as Meta Llama, authenticate with Hugging Face first:
 
 ```bash
 huggingface-cli login
@@ -44,7 +44,7 @@ huggingface-cli login
 
 ```bash
 python training/gpu/qlora_train.py \
-  --model meta-llama/Llama-3.2-3B-Instruct \
+  --model Qwen/Qwen2.5-7B-Instruct \
   --dataset training/exports/kikial-sft-v1.sft.jsonl \
   --output training/models/kikial-llama32-3b \
   --epochs 3 \
@@ -57,7 +57,7 @@ To also save a merged Hugging Face model:
 
 ```bash
 python training/gpu/qlora_train.py \
-  --model meta-llama/Llama-3.2-3B-Instruct \
+  --model Qwen/Qwen2.5-7B-Instruct \
   --dataset training/exports/kikial-sft-v1.sft.jsonl \
   --output training/models/kikial-llama32-3b \
   --epochs 3 \
@@ -85,7 +85,7 @@ Do not call the model improved only because training completed. Compare it on he
 - weak-RAG cases
 - debugging tasks
 
-Only promote the fine-tuned model if it beats the current model without regressions.
+Run `npm run training:export:eval` and keep validation/test examples out of training. Only promote the fine-tuned model if it beats the current model without regressions.
 
 ## 5. Ollama deployment
 

@@ -19,7 +19,7 @@ import { getActiveTask, upsertTask } from "./tasks/taskState.js";
 import { recordExperience } from "./experience/experienceStore.js";
 
 const identity = "Mình là Kikial, trợ lý AI local của bạn. Mình hỗ trợ học tập, lập trình, giải thích kiến thức và phát triển ý tưởng.";
-const STRONG_KNOWLEDGE_MATCH = 0.55;
+const STRONG_KNOWLEDGE_MATCH = 0.72;
 const normalize = (value) => String(value || "").normalize("NFD").replace(/\p{Diacritic}/gu, "").replace(/[đĐ]/g, "d").toLowerCase();
 
 function deterministicAnswer(question, analysis, memory, knowledge, toolResult, documentEvidence = [], candidates = [], queryPlan = null) {
@@ -42,7 +42,7 @@ function deterministicAnswer(question, analysis, memory, knowledge, toolResult, 
   if (/debug|undefined/.test(text)) return "Khi gặp undefined, hãy kiểm tra tên biến, nơi khởi tạo, dữ liệu đầu vào và dùng console.log để theo dõi giá trị trước khi truy cập thuộc tính.";
   if (/async|await/.test(text)) return "async đánh dấu hàm bất đồng bộ và thường trả về Promise; await chờ Promise hoàn tất bên trong hàm async, giúp code dễ đọc hơn.";
   if (/promise/.test(text)) return "Promise đại diện cho kết quả của một tác vụ bất đồng bộ, có thể ở trạng thái pending, fulfilled hoặc rejected.";
-  if (/so nguyen to|prime/.test(text) && /javascript|js\b/.test(text)) return `\`\`js
+  if (/so nguyen to|prime/.test(text) && /javascript|js\b/.test(text)) return `\`\`\`js
 function isPrime(n) {
   if (!Number.isInteger(n) || n < 2) return false;
   for (let i = 2; i * i <= n; i++) {
@@ -60,7 +60,7 @@ Ví dụ: isPrime(7) → true, isPrime(10) → false.`;
   if (memory.length && /ten toi|toi dang hoc gi|toi hoc gi|toi thich hoc|muc tieu|nho/.test(text)) {
     return `Theo thông tin bạn đã chia sẻ: ${memory.map((item) => item.value).join("; ")}.`;
   }
-  if (knowledge[0] && knowledge[0].score >= STRONG_KNOWLEDGE_MATCH && !["PLANNING", "RESEARCH"].includes(analysis.intent)) return knowledge[0].answer;
+  if (knowledge[0] && knowledge[0].score >= STRONG_KNOWLEDGE_MATCH && !["CODING", "PLANNING", "RESEARCH"].includes(analysis.intent)) return knowledge[0].answer;
   if (/tcp.*udp|udp.*tcp/.test(text)) return "TCP có kết nối, kiểm soát thứ tự và độ tin cậy; UDP không thiết lập kết nối, nhẹ và nhanh hơn nhưng không đảm bảo gói tin đến đủ hoặc đúng thứ tự.";
   if (/tri tue nhan tao|\bai\b/.test(text)) return "AI, hay trí tuệ nhân tạo, là công nghệ giúp máy tính thực hiện các nhiệm vụ và ứng dụng cần khả năng hiểu, học, dự đoán và tạo nội dung.";
   if (/node[ .]?js/.test(text)) return "Node.js là môi trường chạy JavaScript phía máy chủ, thường dùng để xây dựng API và ứng dụng backend.";

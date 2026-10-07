@@ -84,3 +84,10 @@ const summary = {
 await mkdir("evals/reports", { recursive: true });
 await writeFile(`evals/reports/${label}.json`, JSON.stringify(summary, null, 2));
 console.log(JSON.stringify({ ...summary, results: undefined }, null, 2));
+
+const gateRequested = process.argv.includes("--gate") || process.env.EVAL_GATE === "true";
+const minPassRate = Number(process.env.EVAL_MIN_PASS_RATE || 0.85);
+if (gateRequested && summary.passRate < minPassRate) {
+  console.error(`Evaluation gate failed: passRate=${summary.passRate.toFixed(3)} < required=${minPassRate.toFixed(3)}`);
+  process.exitCode = 2;
+}

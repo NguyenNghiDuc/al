@@ -43,3 +43,9 @@ test("fresh coding questions route to research rather than stale coding knowledg
   assert.equal(analysis.needsFreshInformation, true);
   assert.equal(analysis.needsRetrieval, true);
 });
+
+test("greetings addressed to Kikial stay simple chat", () => {
+  const analysis = analyzeQuery("Chào Kikial");
+  assert.equal(analysis.intent, "SIMPLE_CHAT");
+  assert.equal(analysis.needsRetrieval, false);
+});

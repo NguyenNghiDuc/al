@@ -21,6 +21,7 @@
     "model:rollback": "node training/commands.js model:rollback",
     "improvement:report": "node training/commands.js improvement:report",
     "training:export:eval": "node training/commands.js training:export:eval",
-    "training:gpu": "python3 training/gpu/qlora_train.py"
+    "training:gpu": "python3 training/gpu/qlora_train.py",
+    "eval:gate": "node evals/runEval.js --gate"
   }
 }

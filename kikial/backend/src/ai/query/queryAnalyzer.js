@@ -45,7 +45,7 @@ export function analyzeQuery(message, history = []) {
       : "LOW";
 
   const needsKnowledge = !["MATH", "SIMPLE_CHAT", "MEMORY"].includes(intent);
-  const needsRetrieval = !["MATH", "SIMPLE_CHAT", "MEMORY"].includes(intent);
+  const needsRetrieval = ["DOCUMENT", "RESEARCH", "FACTUAL", "PLANNING"].includes(intent);
 
   return {
     intent,

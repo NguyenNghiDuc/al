@@ -151,7 +151,8 @@ async function inspect() {
 }
 
 async function exportSft() {
-  const examples = (await readJsonl(datasetPath)).filter((item) => item.verified === true && Number(item.qualityScore) >= 0.7);
+  // Never leak held-out validation/test examples into weight updates.
+  const examples = (await readJsonl(datasetPath)).filter((item) => item.verified === true && Number(item.qualityScore) >= 0.7 && item.split === "train");
   const output = join(trainingRoot, "exports", `${DATASET_VERSION}.sft.jsonl`);
   await mkdir(join(trainingRoot, "exports"), { recursive: true });
   await writeFile(output, examples.map((item) => JSON.stringify({
@@ -159,7 +160,21 @@ async function exportSft() {
       { role: "user", content: item.input ? `${item.instruction}\n\nContext:\n${item.input}` : item.instruction },
       { role: "assistant", content: item.output },
     ],
-    metadata: { id: item.id, source: item.source, domain: item.domain, qualityScore: item.qualityScore },
+    metadata: { id: item.id, source: item.source, domain: item.domain, qualityScore: item.qualityScore, split: item.split },
+  })).join("\n") + (examples.length ? "\n" : ""));
+  console.log(JSON.stringify({ ok: true, output, examples: examples.length }));
+}
+
+async function exportEval() {
+  const examples = (await readJsonl(datasetPath)).filter((item) => item.verified === true && Number(item.qualityScore) >= 0.7 && ["validation", "test"].includes(item.split));
+  const output = join(trainingRoot, "exports", `${DATASET_VERSION}.eval.jsonl`);
+  await mkdir(join(trainingRoot, "exports"), { recursive: true });
+  await writeFile(output, examples.map((item) => JSON.stringify({
+    messages: [
+      { role: "user", content: item.input ? `${item.instruction}\n\nContext:\n${item.input}` : item.instruction },
+      { role: "assistant", content: item.output },
+    ],
+    metadata: { id: item.id, source: item.source, domain: item.domain, qualityScore: item.qualityScore, split: item.split },
   })).join("\n") + (examples.length ? "\n" : ""));
   console.log(JSON.stringify({ ok: true, output, examples: examples.length }));
 }
@@ -214,7 +229,7 @@ async function modelRollback() {
 }
 
 async function train() {
-  console.error("TRAINING EXECUTION: NOT RUN\nREASON: no verified GPU trainer is bundled. Export the reviewed SFT JSONL and train with a reproducible PEFT/QLoRA environment; benchmark before model promotion.");
+  console.error("GPU trainer is bundled at training/gpu/qlora_train.py. Run npm run training:gpu on an NVIDIA CUDA machine after training:prepare, training:validate and training:export:sft.");
   process.exitCode = 2;
 }
 
@@ -224,6 +239,7 @@ else if (command === "training:review") await reviewCandidate();
 else if (command === "training:validate") await validate();
 else if (command === "training:inspect") await inspect();
 else if (command === "training:export:sft") await exportSft();
+else if (command === "training:export:eval") await exportEval();
 else if (command === "training:export:preference") await exportPreference();
 else if (command === "improvement:report") await improvementReport();
 else if (command === "benchmark:model") await benchmark();
